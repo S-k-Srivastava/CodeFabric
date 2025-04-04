@@ -2,3 +2,4 @@
 .env
 projects/
 logs/
+__pycache__/
