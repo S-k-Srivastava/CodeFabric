@@ -6,7 +6,6 @@ from typing import Callable
 from modules.agents.states.developer_state import DeveloperState
 from modules.prompts.my_prompt_templates import MyPromptTemplates
 from modules.enums.prompt_types import PromptTypes
-from modules.enums.technologies import Technologies
 from modules.llms.default_llm import default_llm_with_temperature
 from modules.rag.rag_helper import RagHelper
 from modules.types.current_file import CurrentFile
@@ -16,11 +15,12 @@ from uuid import uuid4
 from langchain.output_parsers import PydanticOutputParser
 from modules.utils.command_runner import run_commands
 from modules.utils.file_helper import FileHelper
-from modules.utils.commands import TechSpecificCommands
+from modules.utils.commands import TechSpecificCommands,VsCodeCommands
 from langchain.docstore.document import Document
 from langgraph.graph import StateGraph, START, END
 from langchain.vectorstores import VectorStore
 from langchain.chat_models.base import BaseChatModel
+from modules.utils.file_writer import write_file
 
 BASE_DIR = Path(__file__).parent.parent.parent.parent / "projects/"
 
@@ -38,7 +38,7 @@ class Developer:
             vector_store:VectorStore,
             llm_with_temperature:LLM_WITH_TEMPRATURE = default_llm_with_temperature,
             num_rag_results_allowed:int=6,
-            max_recursion_allowed:int=120,
+            max_recursion_allowed:int=120
         ):
         # User Inputs
         self.project_name = project_name
@@ -53,6 +53,7 @@ class Developer:
         # Path
         self.cwd = os.path.join(BASE_DIR, project_name)
         os.makedirs(self.cwd, exist_ok=True)
+        run_commands([VsCodeCommands.open_vscode()],cwd=self.cwd)
 
         # Initital State
         id = str(uuid4())
@@ -250,8 +251,8 @@ class Developer:
         file_path = os.path.join(self.cwd,current_file.path)
         os.makedirs(os.path.dirname(file_path), exist_ok=True)
 
-        with open(file_path, 'w') as f:
-            f.write(state['current_file'].code)
+        run_commands([VsCodeCommands.focus_a_file(file_path=current_file.path,line_number=1)],cwd=self.cwd)    
+        write_file(file_path,state['current_file'].code)
         
         # Reset the current file
         state['current_file'] = CurrentFile(index=-1,code=None)
