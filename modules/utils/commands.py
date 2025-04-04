@@ -15,6 +15,9 @@ class NodeJsCommands(TechSpecificCommands):
     def package_install_command(self,packages:list[str])->str:
         return f"npm install {' '.join(packages)}"
     
-class VsCodeCommands(TechSpecificCommands):
-    def project_setup_command(self)->str:
+class VsCodeCommands:
+    def open_vscode(self)->str:
         return "code ."
+    
+    def focus_a_file(self,file_path:str,line_number:int)->str:
+        return f"code --goto f{file_path}:{line_number}"
