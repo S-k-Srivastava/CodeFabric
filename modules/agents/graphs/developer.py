@@ -3,6 +3,7 @@ import os
 from pathlib import Path
 import re
 from typing import Callable
+from modules.agents.memory.developer_memory import DeveloperMemory
 from modules.agents.states.developer_state import DeveloperState
 from modules.prompts.my_prompt_templates import MyPromptTemplates
 from modules.enums.prompt_types import PromptTypes
@@ -11,7 +12,6 @@ from modules.rag.rag_helper import RagHelper
 from modules.types.current_file import CurrentFile
 from modules.types.project_structure import ProjectStructure
 from modules.types.requirements import Requirements
-from uuid import uuid4
 from langchain.output_parsers import PydanticOutputParser
 from modules.utils.command_runner import run_commands
 from modules.utils.file_helper import FileHelper
@@ -31,38 +31,56 @@ LLM_WITH_TEMPRATURE = Callable[[float], BaseChatModel]
 class Developer:
     def __init__(
             self, 
+            id:str,
             project_name:str,
             project_description:str,
             prompts:MyPromptTemplates,
             tech_specific_commands:TechSpecificCommands,
-            vector_store:VectorStore,
+            vector_store:VectorStore = None,
             llm_with_temperature:LLM_WITH_TEMPRATURE = default_llm_with_temperature,
-            num_rag_results_allowed:int=6,
-            max_recursion_allowed:int=120
+            max_recursion_allowed:int=120,
+            memory:DeveloperMemory = None,
+            persist_memory:bool=False
         ):
+
+        if persist_memory and memory is None:
+            raise ValueError("Memory cannot be None if persist_memory is True")
+
         # User Inputs
         self.project_name = project_name
         self.project_description = project_description
+        self.persist_memory = persist_memory
+
+        # Tech Specific Stuff
         self.prompts = prompts
         self.tech_specific_commands = tech_specific_commands
-        self.vector_store = vector_store
+
+        # Performance Related Stuff
         self.llm_with_temperature = llm_with_temperature
-        self.num_rag_results_allowed = num_rag_results_allowed
         self.max_recursion_allowed = max_recursion_allowed
 
-        # Path
+        # Current Working Directory
         self.cwd = os.path.join(BASE_DIR, project_name)
         os.makedirs(self.cwd, exist_ok=True)
         run_commands([VsCodeCommands.open_vscode()],cwd=self.cwd)
 
-        # Initital State
-        id = str(uuid4())
-        self.initital_state = DeveloperState(
-            id=id,
-            requirements=Requirements(project_name=project_name,description=project_description,packages=[]),
-            files=[],
-            current_file=CurrentFile(index=-1,code=None),
-        )
+        # Initital State - Load from memory if exists
+        self.memory = memory
+        if memory is not None and memory.have_past_memory:
+            logger.info("🧠 Using past memory...")
+            self.initial_node = memory.current_node
+            self.initital_state = memory.graph_state
+            self.vector_store = memory.vector_store
+        else:
+            logger.info("🧠 Starting a fresh process with new memory...")
+            self.initial_node = START
+            self.initital_state = DeveloperState(
+                id=id,
+                requirements=Requirements(project_name=project_name,description=project_description,packages=[]),
+                files=[],
+                current_file=CurrentFile(index=-1,code=None),
+            )
+            self.vector_store = RagHelper.get_vector_store() if  vector_store is None else vector_store
 
         # Graph
         self.graph =  self._build_graph()
@@ -85,15 +103,31 @@ class Developer:
         graph_builder.add_node('write_code_to_file',self.write_code_to_file)
         graph_builder.add_node('install_packages',self.install_packages)
 
-        # END
+        
+        # Decide Start Node
+        def decide_start_node(_: DeveloperState):
+            if self.initial_node == START:
+                return 'sanitize_project_description'
+            else:
+                return self.initial_node
+            
+        # END Condition
         def should_generate_next(state: DeveloperState):
             if state['current_file'].index == -1:
+                logger.info("🚀 Process completed! ID: %s", state['id'])
                 return END
             else:
                 return 'generate_code'
 
         # Edges
-        graph_builder.add_edge(START,'sanitize_project_description')
+        graph_builder.add_conditional_edges(
+            source=START,
+            path=decide_start_node,
+            path_map={
+                'sanitize_project_description':'sanitize_project_description',
+                self.initial_node:self.initial_node
+            }
+        )
         graph_builder.add_edge('sanitize_project_description','create_base_project')
         graph_builder.add_edge('create_base_project','install_packages')
         graph_builder.add_edge('install_packages','create_project_structure')
@@ -115,7 +149,16 @@ class Developer:
         return graph
     
     async def arun(self):
-        return await self.graph.ainvoke(self.initital_state,{"recursion_limit": self.max_recursion_allowed})
+        async for event in self.graph.astream(self.initital_state,config={"recursion_limit": self.max_recursion_allowed}):
+            if self.persist_memory:
+                current_node = list(event.keys())[0]
+                current_state = event[current_node]
+                self.memory.save_memory(
+                    state=current_state,
+                    current_node=current_node,
+                    vector_store=self.vector_store
+                )
+                logger.info(f"🧠 Saving memory for current node: {current_node}")
     
     def create_project_structure(self,state:DeveloperState):
 
@@ -191,7 +234,6 @@ class Developer:
     
     def generate_code(self,state:DeveloperState):        
         current_file = state['files'][state['current_file'].index]
-        dependencies_path = current_file.dependencies
 
         logger.info(f"🛠️  Generating code for {current_file.name}...")
 
@@ -211,10 +253,10 @@ class Developer:
             llm=self.llm_with_temperature(0.3),
             vector_store=self.vector_store,
             formatted_prompt=prompt,
-            num_results=self.num_rag_results_allowed
+            num_results=len(current_file.dependencies)
         )
 
-        query = f"Generate the Code for {current_file.name}, You can use these files : {dependencies_path}"
+        query = f"Generate the Code for {current_file.name}, You can use these files : {current_file.dependencies}"
         code = chain.invoke(query)['result']
 
         state['current_file'].code = code
@@ -251,7 +293,6 @@ class Developer:
         file_path = os.path.join(self.cwd,current_file.path)
         os.makedirs(os.path.dirname(file_path), exist_ok=True)
 
-        run_commands([VsCodeCommands.focus_a_file(file_path=current_file.path,line_number=1)],cwd=self.cwd)    
         write_file(file_path,state['current_file'].code)
         
         # Reset the current file

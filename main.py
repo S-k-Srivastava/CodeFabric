@@ -1,5 +1,7 @@
+from uuid import uuid4
 from modules.agents.graphs.nodejs_backend_developer import NodeJsBackendDeveloper
 import asyncio
+from modules.agents.memory.developer_memory import DeveloperMemory
 from modules.logging.logger import setup_logger
 setup_logger()
 
@@ -109,18 +111,13 @@ Project Description :
 ---
 """
 
-"""
-TODO:
-saurav@ubuntu:~/Documents/Personal/AIML/backend-code-gen/projects/todo_app$ code --goto src/app.js
-saurav@ubuntu:~/Documents/Personal/AIML/backend-code-gen/projects/todo_app$ code --goto server.js
-saurav@ubuntu:~/Documents/Personal/AIML/backend-code-gen/projects/todo_app$ code --goto server.js:30
-saurav@ubuntu:~/Documents/Personal/AIML/backend-code-gen/projects/todo_app$ code --goto server.js:30:1
-saurav@ubuntu:~/Documents/Personal/AIML/backend-code-gen/projects/todo_app$ code --goto server.js:30:10
-"""
-
 if __name__ == "__main__":
+    process_id = "8baaf912-7a63-4696-af8a-f376a2b97a99"
+    memory = DeveloperMemory(id=process_id)
     developer = NodeJsBackendDeveloper(
+        id=process_id,
         project_name=project_name,
-        project_description=project_description
+        project_description=project_description,
+        memory=memory
     )
     asyncio.run(developer.arun())

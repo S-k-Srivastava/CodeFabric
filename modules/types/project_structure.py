@@ -8,5 +8,15 @@ class File(BaseModel):
     is_generated : bool = Field(default=False,description="LEAVE IT FALSE")
     code : str = Field(default="",description="LEAVE IT EMPTY STRING")
 
+    def __str__(self):
+        return (
+            f"Name: {self.name}\n"
+            f"Path: {self.path}\n"
+            f"Documentation: {self.documentation}\n"
+            f"Dependencies: {', '.join(self.dependencies)}\n"
+            f"Is Generated: {self.is_generated}\n"
+            f"Code: {self.code}\n\n"
+        )
+
 class ProjectStructure(BaseModel):
     files: list[File] = Field(...,description="list of all the files to be generated for the given project")
