@@ -4,12 +4,12 @@ Given the following context from your project's vectorstore and the target file 
 **ALLOWED NPM PACKAGES**:
 {packages}
 
-**CONTEXT**: (RELATED FILES FOR GENERATING CURRENT FILE CODE)
+**CONTEXT**:
 {context}
 
 **TASK**: 
 Generate the complete implementation for this file: {file}
-About the File : {documentation}
+About the File : {purpose}
 Path of file : `{path}`
 
 **INSTRUCTIONS**:

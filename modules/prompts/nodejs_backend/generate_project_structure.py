@@ -19,7 +19,7 @@ Additional Instructions:
 
 - Also list the file as per dependency order. Any file should not be listed before its dependency file.
 
-- Include precise and documentation for each file explaining its role and dependencies.
+- Include breif purpose for each file and how it should use dependencies.
 - Use standard Nodejs Folder structure (e.g put everything in seperate folders in `src` and server.js in root).
 - Use seperate model,repository,controller and Services and routes. Keep them in seperate folders in src.
 - Create a Custom class for throwing Error and Custom Response class.

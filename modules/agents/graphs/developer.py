@@ -162,7 +162,7 @@ class Developer:
             format=project_structure_parser.get_format_instructions()
         )
     
-        response = self.llm_with_temperature(0.3).invoke(prompt).content
+        response = self.llm_with_temperature(0).invoke(prompt).content
         
         file_list = project_structure_parser.parse(response).files
 
@@ -236,21 +236,26 @@ class Developer:
             partial_variables={
                 'packages': state['requirements'].packages,
                 'file':current_file.name,
-                'documentation':current_file.documentation,
+                'purpose':current_file.purpose,
                 'path':current_file.path,
                 'project_description':state['requirements'].description
             }
         )
 
         chain = RagHelper.get_suitable_chain(
-            llm=self.llm_with_temperature(0.3),
+            llm=self.llm_with_temperature(0),
             vector_store=self.vector_store,
             formatted_prompt=prompt,
             num_results=len(current_file.dependencies) if len(current_file.dependencies) > 0 else 1
         )
 
-        query = f"Generate the Code for {current_file.name}, You can use these files : {current_file.dependencies}"
-        code = chain.invoke(query)['result']
+        query = f"{current_file.dependencies}"
+        res_chain = chain.invoke(query)
+
+        code = res_chain['result']
+        names = [doc.metadata['name'] for doc in res_chain['source_documents']]
+
+        logger.info(f"Related files for {current_file.path} --> {','.join(names)}")
 
         state['current_file'].code = code
         state['files'][state['current_file'].index].is_generated = True
@@ -260,7 +265,7 @@ class Developer:
         code_info = (
             f"File Name : {current_file.name}\n\n"
             f"File Path : {current_file.path}\n\n"
-            f"About File : {current_file.documentation}\n\n"
+            f"About File : {current_file.purpose}\n\n"
             f"Code : {code}\n\n\n"
         )
         self.vector_store.add_documents(
