@@ -35,7 +35,7 @@ class DeveloperMemory:
             self.memory = PickleMemory.load_from_pkl(self._id)
             return True
         except FileNotFoundError as e:
-            raise FileNotFoundError(f"No file found at {e}")
+            return False
 
     def _add_graph_state(self,state:DeveloperState):
         self.memory.add('graph_state',state)
@@ -70,6 +70,7 @@ class DeveloperMemory:
             doc = Document(page_content=vector_docs['documents'][i],metadata=vector_docs['metadatas'][i])
             docs.append(doc)
         
-        vector_store.add_documents(docs)
+        if len(docs) > 0:
+            vector_store.add_documents(docs)
         
         return vector_store

@@ -4,7 +4,7 @@ Given the following context from your project's vectorstore and the target file 
 **ALLOWED NPM PACKAGES**:
 {packages}
 
-**CONTEXT**: 
+**CONTEXT**: (RELATED FILES FOR GENERATING CURRENT FILE CODE)
 {context}
 
 **TASK**: 
@@ -21,7 +21,13 @@ Path of file : `{path}`
    - ES6+ JavaScript syntax
    - Appropriate commenting
    - Consistent code style
-   - Required imports/exports
+   - Required imports/exports, Keep the imports precise based on provided related files data.
+   - Generate complete code for the given file. Do not leave any thing for future.
+   - Follow SOLID Principles, Each and every file must have its own purpose.
+   - Controllers should only call services and send the final response.
+   - Services should only call repositories and send the final response.
+   - Repositories should only call models and send the final response.
+   - Routes should only call controllers and send the final response.
 
 3. ERROR HANDLING ARCHITECTURE:
    - Repository/Data Access Layer: Throw specific, detailed errors with meaningful messages
@@ -51,10 +57,12 @@ call repository functions and repository performs DB operations only (based on m
 **PROJECT DESCRIPTION**:
 {project_description}
 
-**RESPONSE FORMAT**: (DO NOT GENERATE ANY EXTRA TEXT, JUST CODE WRAPPED WITH BELOW SYNTAX.IF YOU DO YOU DIE)
+**RESPONSE FORMAT**: 
+
+(CODE MUST BE WRAPPED IN TRIPLE BACKTICKS LIKE BELOW WITHOUT ANY EXTRA TEXT):
+
 ```javascript
 code goes here
 ```
-
 Please precisely generate the complete code for {file} that would seamlessly integrate with the existing codebase shown in the context.
 """

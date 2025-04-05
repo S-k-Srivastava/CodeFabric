@@ -34,7 +34,6 @@ class PickleMemory:
     def save_as_pkl(self) -> str:
         try:
             path = MEMORY_PATH / f"{self.id}.pkl"
-            print(path)
             os.makedirs(path.parent, exist_ok=True)
             with open(path, "wb") as f:
                 pickle.dump(self.memory, f)

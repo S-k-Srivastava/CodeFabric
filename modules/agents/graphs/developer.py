@@ -122,11 +122,7 @@ class Developer:
         # Edges
         graph_builder.add_conditional_edges(
             source=START,
-            path=decide_start_node,
-            path_map={
-                'sanitize_project_description':'sanitize_project_description',
-                self.initial_node:self.initial_node
-            }
+            path=decide_start_node
         )
         graph_builder.add_edge('sanitize_project_description','create_base_project')
         graph_builder.add_edge('create_base_project','install_packages')
@@ -135,11 +131,8 @@ class Developer:
         graph_builder.add_edge('sort_files_by_dependency','pick_a_file')
         graph_builder.add_conditional_edges(
             source='pick_a_file',
-            path=should_generate_next,
-            path_map={
-                END:END,
-                'generate_code':'generate_code'
-            })
+            path=should_generate_next
+        )
         graph_builder.add_edge('generate_code','sanitize_code')
         graph_builder.add_edge('sanitize_code','write_code_to_file')
         graph_builder.add_edge('write_code_to_file','pick_a_file')
@@ -253,7 +246,7 @@ class Developer:
             llm=self.llm_with_temperature(0.3),
             vector_store=self.vector_store,
             formatted_prompt=prompt,
-            num_results=len(current_file.dependencies)
+            num_results=len(current_file.dependencies) if len(current_file.dependencies) > 0 else 1
         )
 
         query = f"Generate the Code for {current_file.name}, You can use these files : {current_file.dependencies}"

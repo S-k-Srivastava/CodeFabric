@@ -32,18 +32,6 @@ Project Description :
      - `created_at` (DateTime, default: now)  
      - `updated_at` (DateTime, default: now)  
 
-   - **Task Model**:  
-     - `id` (Unique Identifier, type: UUID)  
-     - `todo_id` (UUID, foreign key to Todo.id)  
-     - `title` (String, required, max 150 chars)  
-     - `description` (String, optional, max 500 chars)  
-     - `priority` (Enum: 'low', 'medium', 'high', default: 'medium')  
-     - `status` (Enum: 'not_started', 'in_progress', 'done', default: 'not_started')  
-     - `assigned_to` (UUID, foreign key to User.id, nullable)  
-     - `due_date` (DateTime, optional)  
-     - `created_at` (DateTime, default: now)  
-     - `updated_at` (DateTime, default: now)  
-
 2. **Authentication System**:  
    - Use JWT (JSON Web Tokens) for stateless authentication.  
    - Token refresh mechanism (optional but preferred).  
@@ -83,36 +71,14 @@ Project Description :
 
      - `DELETE /api/todos/:id`: Delete a todo (user must own it).  
        - Response: `204 No Content`.  
-
-   - **Task Routes** (all require JWT authentication):  
-     - `GET /api/todos/:todo_id/tasks`: Fetch all tasks under a specific todo.  
-       - Query Params: Filter by `status`, `priority`, `assigned_to` (optional).  
-       - Response: `200 OK` with array of tasks.  
-
-     - `POST /api/todos/:todo_id/tasks`: Create a new task under a todo.  
-       - Request Body: `{ title, description?, priority?, status?, assigned_to?, due_date? }`  
-       - Response: `201 Created` with created task.  
-
-     - `GET /api/tasks/:id`: Fetch a specific task by ID (user must own the parent todo).  
-       - Response: `200 OK` with task or `404 Not Found`.  
-
-     - `PUT /api/tasks/:id`: Update a task (full update, user must own the parent todo).  
-       - Request Body: `{ title?, description?, priority?, status?, assigned_to?, due_date? }`  
-       - Response: `200 OK` with updated task.  
-
-     - `DELETE /api/tasks/:id`: Delete a task (user must own the parent todo).  
-       - Response: `204 No Content`. 
-
+       
       **Database**:
-      Simply use json stored in local for CRUD operations. if json not exists then for first time it should create
-      a new one for all there dbs (in db folder).
-
-      Create .env for jwt secret  and  other stuffs (use any random secret key from your side).
+      Use MongoDB as the database for storing todo and task data.
 ---
 """
 
 if __name__ == "__main__":
-    process_id = "8baaf912-7a63-4696-af8a-f376a2b97a99"
+    process_id = "test1"
     memory = DeveloperMemory(id=process_id)
     developer = NodeJsBackendDeveloper(
         id=process_id,

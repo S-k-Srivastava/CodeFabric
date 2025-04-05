@@ -15,6 +15,8 @@ Additional Instructions:
    If B is to be imported in C and used, then path of B must be added to dependencies of C.
    so on...
 
+- Keep the dependencies file paths accurate.
+
 - Also list the file as per dependency order. Any file should not be listed before its dependency file.
 
 - Include precise and documentation for each file explaining its role and dependencies.
