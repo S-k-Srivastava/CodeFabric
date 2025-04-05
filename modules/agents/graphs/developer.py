@@ -151,7 +151,7 @@ class Developer:
                     current_node=current_node,
                     vector_store=self.vector_store
                 )
-                logger.info(f"🧠 Saving memory for current node: {current_node}")
+                logger.info(f"🧠 Saving memory for current node: {current_node}\n\n")
     
     def create_project_structure(self,state:DeveloperState):
 
@@ -255,7 +255,7 @@ class Developer:
         code = res_chain['result']
         names = [doc.metadata['name'] for doc in res_chain['source_documents']]
 
-        logger.info(f"Related files for {current_file.path} --> {','.join(names)}")
+        logger.info(f"📂 Related files for {current_file.path} --> [{','.join(names)}]")
 
         state['current_file'].code = code
         state['files'][state['current_file'].index].is_generated = True
