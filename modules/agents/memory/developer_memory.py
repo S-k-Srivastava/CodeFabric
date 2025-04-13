@@ -1,5 +1,5 @@
 import logging
-from modules.agents.states.developer_state import DeveloperState
+from modules.agents.states.project_state import ProjectState
 from modules.persistence.pickle_memory import PickleMemory
 from langchain_community.vectorstores.chroma import Chroma
 from langchain.docstore.document import Document
@@ -21,7 +21,7 @@ class DeveloperMemory:
     
     def save_memory(
         self,
-        state:DeveloperState,
+        state:ProjectState,
         current_node:str,
         vector_store:Chroma,
     ):
@@ -37,7 +37,7 @@ class DeveloperMemory:
         except FileNotFoundError as e:
             return False
 
-    def _add_graph_state(self,state:DeveloperState):
+    def _add_graph_state(self,state:ProjectState):
         self.memory.add('graph_state',state)
     
     def _add_current_node(self,node:str):
@@ -52,7 +52,7 @@ class DeveloperMemory:
         self.memory.add('vector_docs',vector_docs)
 
     @property
-    def graph_state(self) -> DeveloperState:
+    def graph_state(self) -> ProjectState:
         return self.memory.get('graph_state')
     
     @property

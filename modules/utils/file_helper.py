@@ -1,4 +1,4 @@
-from modules.types.project_structure import File
+from modules.types.common.models.files import File
 
 class FileHelper:
     @staticmethod
