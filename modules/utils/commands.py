@@ -1,4 +1,5 @@
 from abc import ABC
+import os
 from modules.enums.technologies import Technologies
 
 class TechSpecificCommands(ABC):
@@ -21,5 +22,5 @@ class VsCodeCommands:
         return "code ."
     
     @staticmethod
-    def focus_a_file(file_path:str,line_number:int)->str:
+    def focus_a_file(file_path:str,line_number:int=0)->str:
         return f"code --goto {file_path}:{line_number}"
