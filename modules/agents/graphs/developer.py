@@ -6,8 +6,6 @@ from modules.agents.memory.developer_memory import DeveloperMemory
 from modules.agents.states.project_state import ProjectState
 from modules.prompts.my_prompt_templates import MyPromptTemplates
 from modules.enums.prompt_types import PromptTypes
-from modules.llms.llms import deep_infra_with_temperature
-from modules.rag.rag_helper import RagHelper
 from modules.types.common.output_formatters.packages_formatter import PackagesFormatter
 from modules.types.common.output_formatters.project_structure_formatter import ProjectStructureFormatter
 from modules.types.common.models.requirements import Requirements
@@ -18,7 +16,6 @@ from modules.utils.commands import TechSpecificCommands,VsCodeCommands
 from modules.utils.io_helper import IOHelper
 from langchain.docstore.document import Document
 from langgraph.graph import StateGraph, START, END
-from langchain.vectorstores import VectorStore
 from langchain.chat_models.base import BaseChatModel
 from langchain.schema import HumanMessage,SystemMessage
 
@@ -37,7 +34,7 @@ class Developer:
             tech_specific_commands:TechSpecificCommands,
             llm_with_temperature:LLM_WITH_TEMPRATURE,
             max_recursion_allowed:int=120,
-            memory:DeveloperMemory = None,
+            memory:DeveloperMemory=None,
             persist_memory:bool=False
         ):
 
@@ -66,7 +63,6 @@ class Developer:
             logger.info("🧠 Using past memory...")
             self.initial_node = memory.current_node
             self.initital_state = memory.graph_state
-            self.vector_store = memory.vector_store
         else:
             logger.info("🧠 Starting a fresh process with new memory...")
             self.initial_node = START
@@ -76,7 +72,6 @@ class Developer:
                 files=[],
                 current_file_index=-1,
             )
-            self.vector_store = RagHelper.get_vector_store()
 
         # Graph
         self.graph =  self._build_graph()
@@ -140,8 +135,7 @@ class Developer:
                 current_state = event[current_node]
                 self.memory.save_memory(
                     state=current_state,
-                    current_node=current_node,
-                    vector_store=self.vector_store
+                    current_node=current_node
                 )
                 logger.info(f"🧠 Saving memory for current node: {current_node}\n\n")
 
@@ -255,13 +249,16 @@ class Developer:
         logger.info(f"🛠️  Generating code for {current_file.name}...")
 
         system_prompt,user_prompt = self.prompts.get_prompt(PromptTypes.GENERATE_FILE)
-        
-        query = f"{current_file.dependencies}"
 
+        context = "No dependencies needed for this file"
+        
         if len(current_file.dependencies) > 0:
-            context = self.vector_store.similarity_search(query,k=len(current_file.dependencies))
-        else:
-            context = []
+            for dependency in current_file.dependencies:
+                file = next((f for f in state['files'] if f.path == dependency), None)
+                if file is not None:
+                    context += f"****File Name : {file.name}****\n****File Path : {file.path}****\nContent:\n{file.code}\n\n--------------\n\n"
+                else:
+                    logger.info(f"📂 File not found: {dependency}")
 
         user_prompt = user_prompt.format(
             packages= ','.join(state['requirements'].packages),
@@ -269,7 +266,7 @@ class Developer:
             technical_specifications=current_file.technical_specifications,
             path=current_file.path,
             project_description=state['requirements'].description,
-            context='\n\n'.join([doc.page_content for doc in context])
+            context=context
         )
 
         messages = [
@@ -281,23 +278,13 @@ class Developer:
 
         code = IOHelper.stream_code_to_file(streamer, cwd=self.cwd,filepath=current_file.path)
 
-        names = [doc.metadata['name'] for doc in context]
-
-        logger.info(f"📂 Related files for {current_file.path} --> [{','.join(names)}]")
+        logger.info(f"📂 Related files for {current_file.path} --> [{','.join(current_file.dependencies)}]")
 
         state['files'][state['current_file_index']].is_generated = True
 
         logger.info("📖 Adding to contexts...")
 
-        code_info = (
-            f"File Name : {current_file.name}\n"
-            f"File Path : {current_file.path}\n\n"
-            f"Code : {code}\n\n"
-        )
-        self.vector_store.add_documents(
-            documents=[
-                Document(page_content=code_info,metadata={'name':current_file.name,'content_type':'code'})
-            ]
-        )
+        state['files'][state['current_file_index']].code = code
+        
         return state
     

@@ -1,9 +1,6 @@
 import logging
 from modules.agents.states.project_state import ProjectState
 from modules.persistence.pickle_memory import PickleMemory
-from langchain_community.vectorstores.chroma import Chroma
-from langchain.docstore.document import Document
-from modules.rag.rag_helper import RagHelper
 logger = logging.getLogger(__name__)
 
 class DeveloperMemory:
@@ -23,11 +20,9 @@ class DeveloperMemory:
         self,
         state:ProjectState,
         current_node:str,
-        vector_store:Chroma,
     ):
         self._add_graph_state(state)
         self._add_current_node(current_node)
-        self._add_vector_store(vector_store)
         self.memory.save_as_pkl()
 
     def load_from_disk(self) -> bool:
@@ -43,14 +38,6 @@ class DeveloperMemory:
     def _add_current_node(self,node:str):
         self.memory.add('current_node',node)
     
-    def _add_vector_store(self,vector_store:Chroma):
-        data = vector_store.get(include=['documents','metadatas'])
-        vector_docs = {
-            'documents':data['documents'],
-            'metadatas':data['metadatas']
-        }
-        self.memory.add('vector_docs',vector_docs)
-
     @property
     def graph_state(self) -> ProjectState:
         return self.memory.get('graph_state')
@@ -58,19 +45,3 @@ class DeveloperMemory:
     @property
     def current_node(self) -> str:
         return self.memory.get('current_node')
-    
-    @property
-    def vector_store(self) -> Chroma:
-        vector_docs = self.memory.get('vector_docs')
-        vector_store = RagHelper.get_vector_store()
-
-        length = len(vector_docs['documents'])
-        docs = []
-        for i in range(length):
-            doc = Document(page_content=vector_docs['documents'][i],metadata=vector_docs['metadatas'][i])
-            docs.append(doc)
-        
-        if len(docs) > 0:
-            vector_store.add_documents(docs)
-        
-        return vector_store
