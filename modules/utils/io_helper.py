@@ -18,13 +18,10 @@ class IOHelper:
         # This handles multiline content properly
         pattern = r'```(?:javascript|js)?\s*([\s\S]*?)```'
         match = re.search(pattern, all_text)
-        
+        code_content = match.group(1)
         if match:
-            # Extract just the code content
-            code_content = match.group(1)
-            
             # Write the code to the file
             with open(path, "w", encoding="utf-8") as f:
                 f.write(code_content)
         
-        return all_text
+        return code_content

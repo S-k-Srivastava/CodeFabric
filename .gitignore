@@ -4,3 +4,4 @@ projects/
 logs/
 __pycache__/
 memories/
+node_modules/
