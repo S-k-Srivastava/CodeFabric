@@ -11,6 +11,6 @@ class Requirements(BaseModel):
     def __str__(self):
         return (
             f"Project Name: {self.project_name}\n"
-            f"Packages: {', '.join([p.name for p in self.packages.packages])}\n"
-            f"Description: {self.description}\n\n"
+            f"Packages: {', '.join(self.packages)}\n"
+            f"Description: {self.description}"
         )

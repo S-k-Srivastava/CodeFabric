@@ -1,4 +1,4 @@
-from modules.agents.states.base_state import BaseState
+from modules.agent_blueprints.states.base_state import BaseState
 from modules.types.common.models.files import File
 from modules.types.common.models.requirements import Requirements
 

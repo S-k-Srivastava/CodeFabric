@@ -2,8 +2,8 @@ import logging
 import os
 from pathlib import Path
 from typing import Callable
-from modules.agents.memory.developer_memory import DeveloperMemory
-from modules.agents.states.project_state import ProjectState
+from modules.agent_blueprints.states.project_state import ProjectState
+from modules.persistence.shared_pkl_memory import SharedPKLMemory
 from modules.prompts.my_prompt_templates import MyPromptTemplates
 from modules.enums.prompt_types import PromptTypes
 from modules.types.common.output_formatters.packages_formatter import PackagesFormatter
@@ -20,6 +20,7 @@ from langchain.chat_models.base import BaseChatModel
 from langchain.schema import HumanMessage,SystemMessage
 
 BASE_DIR = Path(__file__).parent.parent.parent.parent / "projects/"
+DEVELOPER_MEMORY_KEY = "developer"
 
 logger = logging.getLogger(__name__)
 
@@ -33,16 +34,9 @@ class Developer:
             prompts:MyPromptTemplates,
             tech_specific_commands:TechSpecificCommands,
             llm_with_temperature:LLM_WITH_TEMPRATURE,
+            team_memory:SharedPKLMemory,
             max_recursion_allowed:int=120,
-            memory:DeveloperMemory=None,
-            persist_memory:bool=False
         ):
-
-        if persist_memory and memory is None:
-            raise ValueError("Memory cannot be None if persist_memory is True")
-
-        # User Inputs
-        self.persist_memory = persist_memory
 
         # Tech Specific Stuff
         self.prompts = prompts
@@ -58,11 +52,11 @@ class Developer:
         run_commands([VsCodeCommands.open_vscode()],cwd=self.cwd)
 
         # Initital State - Load from memory if exists
-        self.memory = memory
-        if memory is not None and memory.have_past_memory:
+        self.memory = team_memory.get_memory(DEVELOPER_MEMORY_KEY)
+        if self.memory.get('current_node') is not None:
             logger.info("🧠 Using past memory...")
-            self.initial_node = memory.current_node
-            self.initital_state = memory.graph_state
+            self.initial_node = self.memory.get('current_node')
+            self.initital_state = self.memory.get('graph_state')
         else:
             logger.info("🧠 Starting a fresh process with new memory...")
             self.initial_node = START
@@ -130,14 +124,11 @@ class Developer:
     
     async def arun(self):
         async for event in self.graph.astream(self.initital_state,config={"recursion_limit": self.max_recursion_allowed}):
-            if self.persist_memory:
-                current_node = list(event.keys())[0]
-                current_state = event[current_node]
-                self.memory.save_memory(
-                    state=current_state,
-                    current_node=current_node
-                )
-                logger.info(f"🧠 Saving memory for current node: {current_node}\n\n")
+            current_node = list(event.keys())[0]
+            current_state = event[current_node]
+            self.memory.add('graph_state',current_state)
+            self.memory.add('current_node',current_node)
+            logger.info(f"🧠 Saving memory for current node: {current_node}\n\n")
 
     def create_base_project(self,state:ProjectState):
 

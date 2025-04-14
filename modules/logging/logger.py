@@ -5,7 +5,7 @@ import os
 LOGS_PATH = "./logs/"
 
 
-def setup_logger(logger_level: int = logging.INFO) -> None:
+def setup_logger(process_id:str,logger_level: int = logging.INFO) -> None:
     """
     Sets up the root logger that logs to a file named with the current date.
     
@@ -15,9 +15,8 @@ def setup_logger(logger_level: int = logging.INFO) -> None:
     # Ensure the logs directory exists
     os.makedirs(LOGS_PATH, exist_ok=True)
 
-    # Get the current date for the filename
-    current_date = datetime.now().strftime("%Y-%m-%d")
-    log_filename = os.path.join(LOGS_PATH, f"{current_date}.log")
+    # Store using process id
+    log_filename = os.path.join(LOGS_PATH, f"{process_id}.log")
 
     # Configure the root logger
     root_logger = logging.getLogger()
