@@ -6,7 +6,7 @@ from modules.types.common.models.requirements import Requirements
 from modules.utils.commands import NodeJsCommands
 from modules.llms.llms import google_with_temperature
 
-class NodeJsBackendDeveloper(Developer):
+class NodeJsDeveloper(Developer):
     def __init__(
             self, 
             id:str,
@@ -17,7 +17,7 @@ class NodeJsBackendDeveloper(Developer):
         ):
 
         # Nodejs Specifics
-        technology=Technologies.NODEJS_BACKEND
+        technology=Technologies.NODEJS
         prompts = MyPromptTemplates(technology)
         nodejs_commands = NodeJsCommands()
 

@@ -1,24 +1,33 @@
+import asyncio
+import threading
+import streamlit as st
+from modules.implementations.nodejs.team import NodeJsTeam
+from modules.logging.logger import setup_logger
 from modules.persistence.shared_pkl_memory import SharedPKLMemory
-from modules.utils.memory_watcher import MemoryWatcher
-from modules.utils.memory_based_input_handler import INPUT_MEMORY_KEY,INPUT_REQUESTS_KEY,INPUT_RESPONSES_KEY
+from streamlit_app import main
+import logging
 
-process_id = "1054e58c-0d23-4b95-9a48-1d6b3b0bbcb8"
-memory = SharedPKLMemory(process_id
-                         ) 
-def handle_memory_change():
-    memory = SharedPKLMemory(process_id) 
-    input_memory = memory.get_memory(INPUT_MEMORY_KEY)
-    if input_memory.get(INPUT_REQUESTS_KEY) is not None:
+def run_team_worker(process_id):
+   try:
+        team = NodeJsTeam(process_id)
+        asyncio.run(team.start_working())
+   except Exception as e:
+        memory = SharedPKLMemory(process_id)
+        logger = logging.getLogger(__name__)
+        logger.info(e)
+        memory.get_memory("error").add("error",str(e))
 
-        print("Input requests are available")
+# Initialize session state
+if 'process_id' not in st.session_state:
+    st.session_state.process_id = "9049507c-7f9b-42de-9981-252d62ea4231"
+    setup_logger(st.session_state.process_id)
 
-        input_responses = []
-        for input_req in input_memory.get(INPUT_REQUESTS_KEY):
-            in_res = input(input_req.title)
-            input_responses.append(in_res)
+if 'team_thread_started' not in st.session_state:
+    # Start background thread only once
+    thread = threading.Thread(target=run_team_worker, args=(st.session_state.process_id,))
+    thread.daemon = True
+    thread.start()
+    st.session_state.team_thread_started = True
 
-        input_memory.add(INPUT_RESPONSES_KEY,input_responses)
-        input_memory.delete(INPUT_REQUESTS_KEY)
-        
-watcher = MemoryWatcher(memory.file_path,on_change=handle_memory_change)
-watcher.watch()
+# Run the Streamlit main app with persistent process_id
+main(st.session_state.process_id)

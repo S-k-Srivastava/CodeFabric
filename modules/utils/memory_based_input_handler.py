@@ -1,4 +1,5 @@
 
+import time
 from pydantic import BaseModel
 from modules.persistence.shared_pkl_memory import SharedPKLMemory
 from modules.utils.memory_watcher import MemoryWatcher
@@ -17,9 +18,10 @@ class MemoryBasedInputHanlder:
         self.process_id = process_id
     
     def handle_memory_change(self):
+        time.sleep(0.5)
         memory = SharedPKLMemory(self.process_id)
         responses =  memory.get_memory(INPUT_MEMORY_KEY).get(INPUT_RESPONSES_KEY)
-        if responses is not None and self.watcher is not None:
+        if responses is not None and hasattr(self,"watcher") and self.watcher is not None:
             self.watcher.stop()
             self.responses = responses
     
@@ -36,5 +38,5 @@ class MemoryBasedInputHanlder:
         return self.responses
     
     def stop(self):
-        if self.watcher is not None:
+        if hasattr(self,"watcher") and self.watcher is not None:
             self.watcher.stop()

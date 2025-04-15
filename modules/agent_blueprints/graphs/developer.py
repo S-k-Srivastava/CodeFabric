@@ -2,7 +2,7 @@ import logging
 import os
 from pathlib import Path
 from typing import Callable
-from modules.agent_blueprints.states.project_state import ProjectState
+from modules.agent_blueprints.states.developer_state import DeveloperState
 from modules.persistence.shared_pkl_memory import SharedPKLMemory
 from modules.prompts.my_prompt_templates import MyPromptTemplates
 from modules.enums.prompt_types import PromptTypes
@@ -14,13 +14,12 @@ from modules.utils.command_runner import run_commands
 from modules.utils.file_helper import FileHelper
 from modules.utils.commands import TechSpecificCommands,VsCodeCommands
 from modules.utils.io_helper import IOHelper
-from langchain.docstore.document import Document
 from langgraph.graph import StateGraph, START, END
 from langchain.chat_models.base import BaseChatModel
 from langchain.schema import HumanMessage,SystemMessage
+from modules.enums.stages import Stages
 
 BASE_DIR = Path(__file__).parent.parent.parent.parent / "projects/"
-DEVELOPER_MEMORY_KEY = "developer"
 
 logger = logging.getLogger(__name__)
 
@@ -52,7 +51,7 @@ class Developer:
         run_commands([VsCodeCommands.open_vscode()],cwd=self.cwd)
 
         # Initital State - Load from memory if exists
-        self.memory = team_memory.get_memory(DEVELOPER_MEMORY_KEY)
+        self.memory = team_memory.get_memory(Stages.PROJECT_DEVELOPMENT)
         if self.memory.get('current_node') is not None:
             logger.info("🧠 Using past memory...")
             self.initial_node = self.memory.get('current_node')
@@ -60,11 +59,12 @@ class Developer:
         else:
             logger.info("🧠 Starting a fresh process with new memory...")
             self.initial_node = START
-            self.initital_state = ProjectState(
+            self.initital_state = DeveloperState(
                 id=id,
                 requirements=requirements,
                 files=[],
                 current_file_index=-1,
+                cwd=self.cwd
             )
 
         # Graph
@@ -76,7 +76,7 @@ class Developer:
 
         logger.info("🚀 Building Graph...")
 
-        graph_builder = StateGraph(ProjectState)
+        graph_builder = StateGraph(DeveloperState)
 
         graph_builder.add_node('decide_packages',self.decide_packages)
         graph_builder.add_node('create_base_project',self.create_base_project)
@@ -88,14 +88,14 @@ class Developer:
 
         
         # Decide Start Node
-        def decide_start_node(_: ProjectState):
+        def decide_start_node(_: DeveloperState):
             if self.initial_node == START:
                 return 'create_base_project'
             else:
                 return self.initial_node
             
         # END Condition
-        def should_generate_next(state: ProjectState):
+        def should_generate_next(state: DeveloperState):
             if state['current_file_index'] == -1:
                 logger.info("🚀 Process completed! ID: %s", state['id'])
                 return END
@@ -130,7 +130,7 @@ class Developer:
             self.memory.add('current_node',current_node)
             logger.info(f"🧠 Saving memory for current node: {current_node}\n\n")
 
-    def create_base_project(self,state:ProjectState):
+    def create_base_project(self,state:DeveloperState):
 
         logger.info("🚀 Initializing Base Project... (Running template setup)")
 
@@ -143,7 +143,7 @@ class Developer:
 
         return state
     
-    def decide_packages(self,state:ProjectState):
+    def decide_packages(self,state:DeveloperState):
 
         logger.info("🚀 Deciding packages...")
 
@@ -169,7 +169,7 @@ class Developer:
 
         return state 
     
-    def install_packages(self,state:ProjectState):
+    def install_packages(self,state:DeveloperState):
 
         packages = state['requirements'].packages
 
@@ -184,10 +184,12 @@ class Developer:
 
         return state
     
-    def create_project_structure(self,state:ProjectState):
+    def create_project_structure(self,state:DeveloperState):
         """
         Can be overridden later for creating project structure with any custom logic depending on technology.
         """
+        
+        logger.info("📂 Creating Project Structure...")
 
         system_prompt,user_prompt = self.prompts.get_prompt(PromptTypes.GENERATE_PROJECT_STRUCTURE)
         project_structure_parser = PydanticOutputParser(pydantic_object=ProjectStructureFormatter)
@@ -215,7 +217,7 @@ class Developer:
 
         return state
     
-    def sort_files_by_dependency(self,state:ProjectState):
+    def sort_files_by_dependency(self,state:DeveloperState):
         """
         Can be overridden later for sorting files with any custom logic depending on technology.
         """
@@ -224,7 +226,7 @@ class Developer:
 
         return state
     
-    def pick_a_file(self,state:ProjectState):
+    def pick_a_file(self,state:DeveloperState):
 
         logger.info("📂 Picking up the file for generation...")
 
@@ -234,7 +236,7 @@ class Developer:
 
         return state
     
-    def generate_and_write_code(self,state:ProjectState):        
+    def generate_and_write_code(self,state:DeveloperState):        
         current_file = state['files'][state['current_file_index']]
 
         logger.info(f"🛠️  Generating code for {current_file.name}...")
