@@ -6,10 +6,10 @@ class FileFormatter(BaseModel):
     This is a pyndantic model for the structured output for listing files,
     This can be extended and overridden to add custom fields for language specific stuffs.
     """
-    file_name: str = Field(...,description="full file name including proper extension")
-    file_path : str = Field(...,description="relative `path` of the file including file name and extension")
+    file_name: str = Field(...,description="file name including proper extension(example- server.js)")
+    file_path : str = Field(...,description="relative `path` (with respect to the root) of the file including file name and extension")
     technical_specifications : list[str] = Field(...,description="technical specifications")
-    dependencies : list[str] = Field(...,description="list of `path` of other dependencies files")
+    dependencies : list[str] = Field(...,description="list of `path` of other dependencies files(only internal dependencies,not the packages)")
 
     def __str__(self):
         return (

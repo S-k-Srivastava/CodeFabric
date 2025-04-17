@@ -13,7 +13,7 @@ You are an expert Node.js developer tasked with generating a complete CommonJS m
 - Maintain a consistent file structure: imports at the top, followed by function definitions, and exports at the bottom.
 - File should be be completely function based and no classes or instances.
 - Export methods in the format: `module.exports = { func1, func2, ...}`
-- Import dependencies using the format: `const { func1, func2, ... } = require('package-name');`
+- Import dependencies using the format: `const { func1, func2, ... } = require('./correct-path');`. For exact path check provided Dependencies Data.
 - If the file is a .env file then simply generate the file in .env format, VariableName=Value format.
 """
 
