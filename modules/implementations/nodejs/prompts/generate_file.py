@@ -11,18 +11,28 @@ You are an expert Node.js developer tasked with generating a complete CommonJS m
 - Do not include placeholders, incomplete code, comments explaining the code, or references to external resources beyond the provided context.
 - Ensure the file integrates seamlessly with the project's architecture as described in the context and project description.
 - Maintain a consistent file structure: imports at the top, followed by function definitions, and exports at the bottom.
+- File should be be completely function based and no classes or instances.
+- Export methods in the format: `module.exports = { func1, func2, ...}`
+- Import dependencies using the format: `const { func1, func2, ... } = require('package-name');`
 - If the file is a .env file then simply generate the file in .env format, VariableName=Value format.
 """
 
 user_prompt = """
 Generate a Node.js backend file based on the following details:
 
+**Basic Details**
 - File Name: `{file}`
 - Path: `{path}`
 - Allowed NPM Packages: {packages}
-- Purpose : {description}
-- Project Description: {project_description}
-- Context (Related Files): {context}
+
+**Technical Specifications**
+{technical_specifications}
+
+**Complete Project Description (Overall Project Description - You can refer to the part that is needed for this file)**
+{project_description}
+
+**Dependencies**
+{context}
 
 Requirements:
 - Write a complete CommonJS module.

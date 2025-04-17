@@ -7,16 +7,16 @@ class FileFormatter(BaseModel):
     This can be extended and overridden to add custom fields for language specific stuffs.
     """
     file_name: str = Field(...,description="full file name including proper extension")
-    file_path : str = Field(...,description="relative path of the file including file name and extension")
-    description : str = Field(...,description="detailed technical specifications/purposes/descriptions of the given file, which will be used to generate the file")
-    dependencies : list[str] = Field(...,description="list of `path` of other dependencies files (only user generated not the libraries) for the given file")
+    file_path : str = Field(...,description="relative `path` of the file including file name and extension")
+    technical_specifications : list[str] = Field(...,description="technical specifications")
+    dependencies : list[str] = Field(...,description="list of `path` of other dependencies files")
 
     def __str__(self):
         return (
             f"Name: {self.file_name}\n"
             f"Path: {self.file_path}\n"
             f"Dependencies: {', '.join(self.dependencies)}\n"
-            f"Description: {self.description}"
+            f"Technical Specifications: {"\n".join(self.technical_specifications)}"
         )
     
     def to_file(self)->File:
@@ -26,7 +26,7 @@ class FileFormatter(BaseModel):
         return File(
             name=self.file_name,
             path=self.file_path,
-            description=self.description,
+            technical_specifications="\n".join(self.technical_specifications),
             dependencies=self.dependencies,
             is_generated=False,
             code=""

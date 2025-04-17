@@ -23,10 +23,10 @@ class NodeJsTeam(Team):
         )
         await requirement_analyst.arun()
 
-        requirements = self.team_memory.get_memory(Stages.REQUIREMENTS_GATHERING).get('requirements')
+        requirements = self.team_memory.get_memory(Stages.REQUIREMENTS_GATHERING).get('graph_state')['requirements']
 
         developer = NodeJsDeveloper(
-            id=self.process_id,
+            process_id=self.process_id,
             requirements=requirements,
             llm=self.llm,
             team_memory=self.team_memory
