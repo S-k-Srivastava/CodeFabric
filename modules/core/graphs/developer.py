@@ -25,7 +25,7 @@ logger = logging.getLogger(__name__)
 class Developer:
     def __init__(
             self, 
-            id:str,
+            process_id:str,
             requirements:Requirements,
             prompts:PromptTemplates,
             tech_specific_commands:TechSpecificCommands,
@@ -33,6 +33,8 @@ class Developer:
             team_memory:SharedPKLMemory,
             max_recursion_allowed:int=120,
         ):
+
+        self.process_id = process_id
 
         # Tech Specific Stuff
         self.prompts = prompts
@@ -52,12 +54,12 @@ class Developer:
         if self.memory.get('current_node') is not None:
             logger.info("🧠 Using past memory...")
             self.initial_node = self.memory.get('current_node')
-            self.initital_state = self.memory.get('graph_state')
+            self.initial_state = self.memory.get('graph_state')
         else:
             logger.info("🧠 Starting a fresh process with new memory...")
             self.initial_node = START
-            self.initital_state = DeveloperState(
-                id=id,
+            self.initial_state = DeveloperState(
+                id=process_id,
                 requirements=requirements,
                 files=[],
                 current_file_index=-1,
@@ -67,7 +69,7 @@ class Developer:
         # Graph
         self.graph =  self._build_graph()
 
-        logger.info("🚀 Process started! ID: %s", id)
+        logger.info("🚀 Development process started! ID: %s", process_id)
 
     def _build_graph(self):
 
@@ -120,12 +122,16 @@ class Developer:
         return graph
     
     async def arun(self):
-        async for event in self.graph.astream(self.initital_state,config={"recursion_limit": self.max_recursion_allowed}):
+        async for event in self.graph.astream(self.initial_state,config={"recursion_limit": self.max_recursion_allowed}):
             current_node = list(event.keys())[0]
             current_state = event[current_node]
             self.memory.add('graph_state',current_state)
             self.memory.add('current_node',current_node)
             logger.info(f"🧠 Saving memory for current node: {current_node}\n\n")
+
+        self.memory.add('current_node',END)
+
+        logger.info("🚀 Development process completed! ID: %s", self.process_id)
 
     def create_base_project(self,state:DeveloperState):
 
@@ -204,6 +210,8 @@ class Developer:
         ]
         response = self.llm_with_temperature(0.6).invoke(messages).content
 
+        logger.info(response)
+
         file_list = project_structure_parser.parse(response).to_files()
 
         state['files'] = file_list
@@ -253,7 +261,7 @@ class Developer:
         user_prompt = user_prompt.format(
             packages= ','.join(state['requirements'].packages),
             file=current_file.name,
-            description=current_file.description,
+            technical_specifications=current_file.technical_specifications,
             path=current_file.path,
             project_description=state['requirements'].description,
             context=context

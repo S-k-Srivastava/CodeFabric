@@ -8,7 +8,7 @@ from modules.implementations.nodejs.prompts.prompt_templates import NodeJsPrompt
 class NodeJsDeveloper(Developer):
     def __init__(
             self, 
-            id:str,
+            process_id:str,
             requirements:Requirements,
             team_memory:SharedPKLMemory,
             llm=LLM_WITH_TEMPRATURE,
@@ -20,7 +20,7 @@ class NodeJsDeveloper(Developer):
         nodejs_commands = NodeJsCommands()
 
         super().__init__(
-            id=id,
+            process_id=process_id,
             requirements=requirements,
             prompts=prompts,
             tech_specific_commands=nodejs_commands,

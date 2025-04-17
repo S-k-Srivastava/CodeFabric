@@ -7,7 +7,7 @@ class File(BaseModel):
     """
     name: str
     path : str
-    description : str
+    technical_specifications : str
     dependencies : list[str]
     is_generated : bool
     code : str
