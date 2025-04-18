@@ -1,7 +1,8 @@
+import json
 import logging
 from modules.core.enums.stages import Stages
 from modules.core.models.requirements import Requirements
-from modules.core.persistence.shared_pkl_memory import SharedPKLMemory
+from modules.core.persistence.my_redis_memory import MyRedisMemory,InputHanlder,Input
 from modules.core.states.requirements_gathering_state import RequirementsGatheringState
 from langgraph.graph import StateGraph,START,END
 
@@ -10,20 +11,18 @@ logger = logging.getLogger(__name__)
 class RequirementsGatherer:
     def __init__(
             self,
-            process_id:str,
-            team_memory:SharedPKLMemory
+            process_id:str
         ):
         self.process_id = process_id
 
-
-        self.memory = team_memory.get_memory(Stages.REQUIREMENTS_GATHERING)
+        self.memory = MyRedisMemory(process_id=self.process_id).get_memory(Stages.REQUIREMENTS_GATHERING)
 
         # Initital State - Load from memory if exists
         logger.info(self.memory.get('current_node'))
         if self.memory.get('current_node') is not None:
             logger.info("🧠 Using past memory...")
             self.initial_node = self.memory.get('current_node')
-            self.initial_state = self.memory.get('graph_state')
+            self.initial_state : RequirementsGatheringState = self.memory.get('current_state')
         else:
             self.initial_node = START
             self.initial_state = RequirementsGatheringState(
@@ -69,7 +68,7 @@ class RequirementsGatherer:
         async for event in self.graph.astream(self.initial_state):
             current_node = list(event.keys())[0]
             current_state = event[current_node]
-            self.memory.add('graph_state',current_state)
+            self.memory.add('current_state',current_state)
             self.memory.add('current_node',current_node)
             logger.info(f"🧠 Saving memory for current node: {current_node}\n\n")
         
@@ -80,12 +79,23 @@ class RequirementsGatherer:
     def get_requirements(self,state:RequirementsGatheringState):
         logger.info("🚀 Gathering requirements...")
 
-        project_name = input("Project Name: ")
-        description = input("Description: ")
+        project_name_req= Input(
+            title="Project Name",
+            description="Enter the name of your project",
+            multiline=False
+        )
+        description_req = Input(
+            title="Description",
+            description="Enter a detailed description of your project",
+            multiline=True
+        )
+
+        inputhandler = InputHanlder(process_id=self.process_id)
+        responses = inputhandler.request_input([project_name_req,description_req])
 
         requirements = Requirements(
-            project_name=project_name,
-            description=description,
+            project_name=responses[0],
+            description=responses[1],
             packages=[]
         )
 

@@ -4,3 +4,4 @@ langchain_openai==0.3.14
 langchain_deepinfra==0.1.0
 langgraph==0.3.25
 langchain_community==0.3.21
+redis==5.2.1
