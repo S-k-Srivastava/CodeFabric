@@ -35,6 +35,8 @@ Want to unleash your AI dev team? Follow these simple steps:
      python main.py
      ```  
    - Enter your `Process ID`, `Project Name`, and a detailed `Project Description`.
+  
+5. Check `.sample_projects/bookstore` for sample NodeJs Project generated using this repoistory.
 
 ---
 
