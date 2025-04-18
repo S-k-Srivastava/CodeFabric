@@ -41,7 +41,7 @@ Want to unleash your AI dev team? Follow these simple steps:
 
 - Use powerful reasoning LLMs for best results:
   - ✅ `gemini-2.0-flash-thinking-exp-01-21`
-  - ✅ `gpt-4o` and other GPT-4/3.5 variants  
+  - ✅ `gpt-4o` and other new models like o3.
 - Remember: even human devs make mistakes. While this system won’t guarantee 100% error-free code, with the right prompts and models, it can reach up to **90%+ accuracy**!  
 - Want the best? Use great prompts and iterate like a pro. 🔁
 
