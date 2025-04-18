@@ -10,7 +10,7 @@ from modules.core.llms.llms import deep_infra_with_temperature
 from modules.core.persistence.my_redis_memory import Input, REQUEST_CHANNEL, RESPONSE_CHANNEL
 
 def render_dynamic_form(inputs: List[Input], redis_conn):
-    print("\n--- Human Input Required ---")
+    print("\n--- Human Input Required ---\n")
     responses = []
     for input_item in inputs:
         if input_item.description:
@@ -24,7 +24,7 @@ def start_team(team: NodeJsTeam):
     asyncio.run(team.start_working())
 
 def main():
-    process_id = input("Enter Process ID: ").strip()
+    process_id = input("Enter Process ID > ").strip()
     setup_logger(process_id)
 
     redis_conn = redis.Redis(host='localhost', port=6379, db=0)
