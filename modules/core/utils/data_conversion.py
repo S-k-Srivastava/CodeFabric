@@ -35,9 +35,18 @@ def deserialize_pydantic_model(value: str) -> BaseModel:
 def serialize_typedict(value: dict) -> str:
     if not isinstance(value, dict):
         raise ValueError("Value is not a dict")
+    # print(isinstance(val, BaseModel))
     serialized = {
-        'value': {
-            key: (
+    'value': {
+        key: (
+            # Handle lists
+                [
+                    serialize_pydantic_model(item) if isinstance(item, BaseModel) else
+                    serialize_typedict(item) if isinstance(item, dict) else
+                    serialize_other_values(item)
+                    for item in val
+                ] if isinstance(val, list) else
+                # Handle non-list cases (BaseModel, dict, or other)
                 serialize_pydantic_model(val) if isinstance(val, BaseModel) else
                 serialize_typedict(val) if isinstance(val, dict) else
                 serialize_other_values(val)
@@ -54,23 +63,37 @@ def deserialize_typedict(value: str) -> dict:
         raise ValueError("Value is not a serialized typedict")
     result = {}
     for key, val in value_dict['value'].items():
-        val_dict = json.loads(val) if isinstance(val, str) else val
-        if isinstance(val_dict, dict) and 'type' in val_dict:
-            if val_dict['type'] == 'pydantic':
-                result[key] = deserialize_pydantic_model(val)
-            elif val_dict['type'] == 'typedict':
-                result[key] = deserialize_typedict(val)
-            else:
-                result[key] = deserialize_other_values(val)
+        if isinstance(val, list):
+            # Handle lists by processing each item
+            result[key] = [
+                (
+                    deserialize_pydantic_model(item) if isinstance(json.loads(item), dict) and json.loads(item).get('type') == 'pydantic' else
+                    deserialize_typedict(item) if isinstance(json.loads(item), dict) and json.loads(item).get('type') == 'typedict' else
+                    deserialize_other_values(item) if isinstance(json.loads(item), dict) and 'type' in json.loads(item) else
+                    json.loads(item) if isinstance(item, str) else item
+                )
+                for item in val
+            ]
         else:
-            result[key] = val_dict
+            # Handle non-list cases
+            val_dict = json.loads(val) if isinstance(val, str) else val
+            if isinstance(val_dict, dict) and 'type' in val_dict:
+                if val_dict['type'] == 'pydantic':
+                    result[key] = deserialize_pydantic_model(val)
+                elif val_dict['type'] == 'typedict':
+                    result[key] = deserialize_typedict(val)
+                else:
+                    result[key] = deserialize_other_values(val)
+            else:
+                result[key] = val_dict
     return result
 
 def serialize_other_values(value: Any) -> str:
+    type_str = type(value).__name__
     try:
         return json.dumps({
             'value': value,
-            'type': type(value).__name__
+            'type': type_str
         })
     except Exception as e:
         raise ValueError(f"Failed to serialize value: {str(e)}")

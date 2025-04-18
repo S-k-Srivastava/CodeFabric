@@ -12,7 +12,7 @@ listed before its dependencies. SO that they can be generated in proper sequence
 For Each File, Provide:
 - file_path: Full path including filename and extension.
 - file_name: Filename with extension.
-- dependencies: List of `path` of other files that this file depends on.
+- dependencies: List of `path` of other files that this file depends on. (DO NOT ADD EXTERNAL DEPENDENCIES OR PACKAGES, JUST THE OTHER FILES TO BE IMPORTED)
 - technical_specifications: list of technical specifications. No code required but explain all imports, exports, logic, methods, and purpose clearly.
 Must have each and every thing that needs to be implemented in the file.
 
