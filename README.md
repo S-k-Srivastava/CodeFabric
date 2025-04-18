@@ -20,6 +20,7 @@ Want to unleash your AI dev team? Follow these simple steps:
      ```bash
      pip install -r requirements.txt
      ```
+   - Activate the venv
 
 3. **Run Redis with Docker**  
    - Start Redis using Docker:  
