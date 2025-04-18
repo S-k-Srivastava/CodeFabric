@@ -7,7 +7,7 @@ from modules.core.prompts.prompt_templates import PromptTemplates
 from modules.core.models.requirements import Requirements
 from modules.core.output_formatters.packages_formatter import PackagesFormatter
 from modules.core.output_formatters.project_plan_formatter import ProjectPlanFormatter
-from modules.core.persistence.shared_pkl_memory import SharedPKLMemory
+from modules.core.persistence.my_redis_memory import MyRedisMemory
 from modules.core.states.developer_state import DeveloperState
 from modules.core.types.llm_with_temperature import LLM_WITH_TEMPRATURE
 from modules.core.utils.file_helper import FileHelper
@@ -30,7 +30,6 @@ class Developer:
             prompts:PromptTemplates,
             tech_specific_commands:TechSpecificCommands,
             llm:LLM_WITH_TEMPRATURE,
-            team_memory:SharedPKLMemory,
             max_recursion_allowed:int=120,
         ):
 
@@ -50,11 +49,11 @@ class Developer:
         run_commands([VsCodeCommands.open_vscode()],cwd=self.cwd)
 
         # Initital State - Load from memory if exists
-        self.memory = team_memory.get_memory(Stages.PROJECT_DEVELOPMENT)
+        self.memory = MyRedisMemory(process_id=self.process_id).get_memory(Stages.PROJECT_DEVELOPMENT)
         if self.memory.get('current_node') is not None:
             logger.info("🧠 Using past memory...")
             self.initial_node = self.memory.get('current_node')
-            self.initial_state = self.memory.get('graph_state')
+            self.initial_state : DeveloperState = self.memory.get('current_state')
         else:
             logger.info("🧠 Starting a fresh process with new memory...")
             self.initial_node = START
@@ -125,7 +124,7 @@ class Developer:
         async for event in self.graph.astream(self.initial_state,config={"recursion_limit": self.max_recursion_allowed}):
             current_node = list(event.keys())[0]
             current_state = event[current_node]
-            self.memory.add('graph_state',current_state)
+            self.memory.add('current_state',current_state)
             self.memory.add('current_node',current_node)
             logger.info(f"🧠 Saving memory for current node: {current_node}\n\n")
 
