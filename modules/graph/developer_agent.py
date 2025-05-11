@@ -1,15 +1,18 @@
 import json
 import logging
+import re
 from langchain_openai import ChatOpenAI
 from langchain_core.messages import HumanMessage,AIMessage,SystemMessage
 from modules.prompts import decide_packages_prompts as DecidePackagesPrompts
 from modules.prompts import create_project_plan_prompts as CreateProjectPlanPrompts
+from modules.prompts import generate_file_code_prompts as GenerateFileCodePrompts
+from modules.prompts import generate_gitignore_prompts as GenerateGitIgnorePrompts
 from enum import Enum
-from typing import List, Dict
 from collections import defaultdict, deque
 from dotenv import load_dotenv
 
-from modules.types.output_formatters import PackagesFormatter,FileInfosFormatter
+from modules.types.output_formatters import GitIgnoreFormatter, PackagesFormatter,FileInfosFormatter
+from modules.utils.io_helper import IOHelper
 load_dotenv()
 import os
 
@@ -45,7 +48,9 @@ class NodeIDs(Enum):
     INSTALL_PACKAGES = "install-packages"
     CREATE_PROJECT_PLAN = "create-project-plan"
     SORT_TOPOLOGICALLY = "sort-topologically"
+    PICK_A_FILE = "pick-a-file"
     GENERATE_FILE_CODE = "generate-file-code"
+    GIT_COMMIT = "git-commit"
 
 class DeveloperAgent:
     def __init__(
@@ -55,9 +60,11 @@ class DeveloperAgent:
         llm=None,
         reasoning_llm=None,
         allowed_retry_count=3,
+        recursion_limit=150
     ):  
         # Initialize max allowed retries for any node
         self.allowed_retry_count = allowed_retry_count
+        self.recursion_limit = recursion_limit
 
         # Initialize Initial State and cwd
         cwd = os.path.join(output_folder, requirements['project_name'])
@@ -99,7 +106,9 @@ class DeveloperAgent:
         graph_builder.add_node(NodeIDs.INSTALL_PACKAGES.value,self.install_packages)
         graph_builder.add_node(NodeIDs.CREATE_PROJECT_PLAN.value,self.create_project_plan)
         graph_builder.add_node(NodeIDs.SORT_TOPOLOGICALLY.value,self.sort_topologically)
+        graph_builder.add_node(NodeIDs.PICK_A_FILE.value,self.pick_a_file)
         graph_builder.add_node(NodeIDs.GENERATE_FILE_CODE.value,self.generate_file_code)
+        graph_builder.add_node(NodeIDs.GIT_COMMIT.value,self.git_commit)
 
         # Retry Conditions : If any node fails, create retry condition
         # based on the result_state of that node or step
@@ -134,7 +143,18 @@ class DeveloperAgent:
         )
         graph_builder.add_conditional_edges(source=NodeIDs.INSTALL_PACKAGES.value,path=install_packages_path)
         graph_builder.add_edge(NodeIDs.CREATE_PROJECT_PLAN.value,NodeIDs.SORT_TOPOLOGICALLY.value)
-        graph_builder.add_edge(NodeIDs.SORT_TOPOLOGICALLY.value,END)
+        graph_builder.add_edge(NodeIDs.SORT_TOPOLOGICALLY.value,NodeIDs.PICK_A_FILE.value)
+
+        # Conditional Edge Path to Generate all files in state['files']
+        def generate_file_next_path(state:DeveloperState):
+            if state['current_index'] == -1:
+                return NodeIDs.GIT_COMMIT.value
+            else:
+                return NodeIDs.GENERATE_FILE_CODE.value
+             
+        graph_builder.add_conditional_edges(source=NodeIDs.PICK_A_FILE.value,path=generate_file_next_path)
+        graph_builder.add_edge(NodeIDs.GENERATE_FILE_CODE.value,NodeIDs.PICK_A_FILE.value)
+        graph_builder.add_edge(NodeIDs.GIT_COMMIT.value,END)
         
         # Compile Graph with Checkpointer
         graph = graph_builder.compile(checkpointer=self.checkpointer)
@@ -145,7 +165,10 @@ class DeveloperAgent:
     
     def run(self):
         # Graph Config
-        config = {"configurable": {"thread_id": self.initial_state['process_id']}}
+        config = {
+            'recursion_limit':self.recursion_limit,
+            "configurable": {"thread_id": self.initial_state['process_id']}    
+        }
 
         # Check if any previous checkpoint
         if self.graph.get_state(config).values == {}:
@@ -159,7 +182,10 @@ class DeveloperAgent:
 
     async def arun(self):
         # Graph Config
-        config = {"configurable": {"thread_id": self.initial_state['process_id']}}
+        config = {
+            'recursion_limit':self.recursion_limit,
+            "configurable": {"thread_id": self.initial_state['process_id']}
+        }
 
         # Check if any previous checkpoint
         if self.graph.get_state(config).values == {}:
@@ -334,12 +360,157 @@ class DeveloperAgent:
         state['files'] = [path_to_file[path] for path in sorted_paths]
 
         # For Debugging Only
-        with open("file_info.json", "w", encoding="utf-8") as f:
+        with open("current_files.json", "w", encoding="utf-8") as f:
             json.dump(state['files'], f, indent=2, ensure_ascii=False)
 
         logger.info(f"✅ **TopologicalSort**: Files sorted successfully, total files: {len(state['files'])} 🎉")
 
         return state
     
+    def pick_a_file(self,state:DeveloperState) -> DeveloperState:
+
+        for i in range(0,len(state['files'])):
+            file = state['files'][i]
+            if not file['is_generated']:
+                state['current_index'] = i
+                break
+
+        if state['current_index'] == -1:
+            logger.info("📦 **FilePick**: No more files to generate! 🚀")
+        else:
+            logger.info(f"✅ **FilePick**: File picked successfully, file name: {state['files'][state['current_index']]['name']} 🎉")
+
+        return state
+    
     def generate_file_code(self,state:DeveloperState) -> DeveloperState:
+
+        # Current File to Generate
+        current_file = state['files'][state['current_index']]
+
+        # result id
+        result_id = f"{NodeIDs.GENERATE_FILE_CODE.value}+{current_file['path'].replace("/","_").replace(".","_")}"
+
+        logger.info(f"📦 **FileGeneration**: Starting file generation process for {current_file['name']}! 🚀")
+
+        # Get Previous Result State or Initialize New Result State
+        result_state = state['result_states'].get(result_id,None)
+        if result_state is None:
+            result_state = ResultState(
+                messages=[SystemMessage(GenerateFileCodePrompts.system_prompt)],
+                success=False,
+                error=None,
+                version=0,
+                retries=0,
+            )
+            state['result_states'][result_id] = result_state
+
+        dependencies_files = [file for file in state['files'] if file['path'] in current_file['dependencies']]
+        logger.info(f"📦 **FileGeneration**: {len(current_file['dependencies'])}/{len(dependencies_files)} Found! 🚀")
+        
+        dependencies_file_contents = (
+            "<dependencies>\n\n\n" +
+            "\n\n\n".join(
+                f"FileName: {file['name']}\n"
+                f"FilePath: {file['path']}\n"
+                f"FileContent: {file['code']}"
+                for file in dependencies_files
+            ) +
+            "\n\n</dependencies>\n"
+        )
+
+
+        context_provider_prompt = (
+            "<project_info>\n"
+            f"Project Description: {state['requirements']['project_description']}\n"
+            f"Sanctioned Packages: {', '.join(state['requirements']['packages'])}\n"
+            "</project_info>\n\n\n\n"
+            f"{dependencies_file_contents}"
+            "<file_info>\n"
+            f"Language: {state['requirements']['technology']}\n"
+            f"FileName: {current_file['name']}\n"
+            f"FilePath: {current_file['path']}\n"
+            f"Dependencies: {', '.join(current_file['dependencies'])}\n"
+            f"Technical Specifications: {current_file['technical_specifications']}\n"
+            "</file_info>\n\n"
+            "\n\n\nGenerate the file using the <file_info>,<project_info>" 
+            "and the <dependencies>. Wrap the code in ```code and ```.\n"
+        )
+
+        state['result_states'][result_id]['messages'].append(HumanMessage(context_provider_prompt))
+
+        ai_message = self.llm.invoke(state['result_states'][result_id]['messages'])
+
+        # Filter code
+        file_content = re.sub(r'```[a-zA-Z0-9_]*', '', ai_message.content)
+
+        # Write to the file
+        IOHelper.write_code_to_file(file_content,state['cwd'],current_file['path'].lstrip("/") )
+        
+        # Update State
+        state['result_states'][result_id]['version'] += 1
+        state['result_states'][result_id]['messages'].append(ai_message)
+        state['files'][state['current_index']]['code'] = file_content
+        state['files'][state['current_index']]['is_generated'] = True
+        state['current_index'] = -1
+
+        logger.info("✅ **FileGeneration**: File generated successfully! 🎉")
+
+        return state
+    
+    def git_commit(self,state:DeveloperState) -> DeveloperState:
+        # result id
+        result_id = NodeIDs.GIT_COMMIT.value
+
+        logger.info("📦 **GitCommit**: Starting git commit process! 🚀")
+
+        # Get Previous Result State or Initialize New Result State
+        result_state = state['result_states'].get(result_id,None)
+        if result_state is None:
+            result_state = ResultState(
+                messages=[SystemMessage(GenerateGitIgnorePrompts.system_prompt)],
+                success=False,
+                error=None,
+                version=0,
+                retries=0,
+            )
+            state['result_states'][result_id] = result_state
+
+        # Parent Files/ Folders in root
+        command_results_ls_all = self.command_runner.run_commands(['ls -all'])[0]
+
+        if command_results_ls_all.error:
+            raise Exception(command_results_ls_all.error)
+
+        # Invokation
+        context_provider_prompt = (
+            f"Tech Stack: {state['requirements']['technology']}\n"
+            f"Files in root: {command_results_ls_all.output}\n"
+            f"Detailed File Structure: \n"
+            f"{'\n'.join([f'File Name: {file["name"]}\nFile Path: {file["path"]}\n' for file in state['files']])}\n"
+        )
+        state['result_states'][result_id]['messages'].append(HumanMessage(context_provider_prompt))
+        _gitignore_list = self.llm.with_structured_output(GitIgnoreFormatter).invoke(state['result_states'][result_id]['messages'])
+        
+        # Transform and Write .gitignore
+        gitignores = _gitignore_list.to_model
+        gitignore_content = "\n".join(gitignores)
+        IOHelper.write_code_to_file(gitignore_content,state['cwd'],".gitignore")
+
+        # Commit
+        command_results_git_commit = self.command_runner\
+            .run_commands(['git init','git add .','git commit -m "Initial Commit By Developer Agent"','git log'])
+        
+        # If any command failed then raise Exception
+        for command_result in command_results_git_commit:
+            if not command_result.is_success:
+                raise Exception(command_result.error)
+
+        # Update State
+        state['result_states'][result_id]['version'] += 1
+        state['result_states'][result_id]['messages'].append(AIMessage(str(_gitignore_list.model_dump_json())))
+
+        logger.info("✅ **GitCommit**: Git commit successfully! 🎉")
+
+        logger.info(command_results_git_commit[len(command_results_git_commit)-1].output)
+
         return state

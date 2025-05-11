@@ -32,3 +32,10 @@ class FileInfosFormatter(BaseModel):
     @property
     def to_model(self) -> list[FileInfo]:
         return [file.to_model for file in self.files]
+    
+class GitIgnoreFormatter(BaseModel):
+    ignore : list[str] = Field(...,description="List of file/folder names to ignore in git.")
+
+    @property
+    def to_model(self) -> list[str]:
+        return self.ignore

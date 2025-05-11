@@ -59,12 +59,17 @@ class CommandRunner:
                 if not isinstance(cmd, (str, list)):
                     raise ValueError(f"Invalid command format: {cmd}")
                 
+                env = os.environ.copy()
+                for item in ['VIRTUAL_ENV','VIRTUAL_ENV_PROMPT']:
+                    env.pop(item, None)
+                
                 # Run the command sequentially
                 process = subprocess.run(
                     cmd,
                     cwd=cwd,
                     shell=True,  # Since we are passing string commands
                     text=True,
+                    env=env,
                     capture_output=True  # Ensures output capturing without separate communicate()
                 )
                 

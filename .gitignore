@@ -17,3 +17,9 @@ logs/
 
 # DB
 db/
+
+# Outputs
+outputs/
+
+# Temp files
+*.json

@@ -9,5 +9,5 @@ ProjectInitializationCommands: dict[str, str] = {
 PackageInstallationCommands: dict[str, str] = {
     Technologies.NodeJS.value: "npm install {packages}",
     Technologies.PYTHON_UV.value: "uv add {packages}",
-    Technologies.PYTHON.value: "pip install {packages}",
+    Technologies.PYTHON.value: ".venv/bin/python -m pip install {packages}",
 }
