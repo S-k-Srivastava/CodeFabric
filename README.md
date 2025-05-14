@@ -1,49 +1,70 @@
-LangGraph Developer Agent 🦸‍♂️
-Welcome to the LangGraph Developer Agent, your coding sidekick that whips up any project faster than you can say "deploy!" 🚀 Feed it your project idea, and it’ll spin up code like a wizard casting spells 🧙‍♂️. Built with LangGraph, it’s automation with a dash of magic ✨.
-This README covers setup, usage, and how to unleash this agent’s power. Let’s dive in! 😎
-Features 🌟
+# LangGraph Developer Agent 🦸‍♂️
 
-Project Generator: Creates any project from your requirements (e.g., web apps, CLIs, you name it!).
-Tech Flexibility: Supports multiple tech stacks via the Technologies enum.
-Smart Workflow: LangGraph orchestrates everything like a pro conductor 🎶.
-Logging: Tracks the process, so you’re never lost in the code jungle 🌴.
-Graph Visualization: Shows the workflow with a cool Mermaid diagram 📊.
+Welcome to the LangGraph Developer Agent, your coding sidekick that spins up any project faster than you can say "commit to GitHub!" 🚀 Feed it your project idea, and it’ll generate code like a wizard casting spells 🧙‍♂️. Powered by LangGraph, it’s automation with a sprinkle of magic ✨.
 
-Prerequisites 🛠️
+This README covers setup and usage to unleash this agent’s power on GitHub. Let’s dive in! 😎
 
-Python 3.8+ 🐍
-Git 📜
-Project-specific tools (e.g., Node.js for Node projects)
-requirements.txt or uv file for dependencies
-A pinch of coding enthusiasm 😄
+---
 
-Installation 📦
-Pick your flavor: venv or uv.
-Option 1: Using venv 🐍
+## Features 🌟
 
-Clone the repo:git clone <your-repo-url>
-cd <your-repo-folder>
+- **Project Generator**: Builds any project from your requirements (web apps, CLIs, or your wildest ideas!).
+- **Tech Flexibility**: Supports multiple tech stacks via the `Technologies` enum.
+- **Smart Workflow**: LangGraph orchestrates the process like a pro conductor 🎶.
+- **Logging**: Tracks progress, so you’re never lost in the code jungle 🌴.
 
+---
 
-Set up and activate a virtual environment:python3 -m venv venv
+## Prerequisites 🛠️
+
+- Python 3.8+ 🐍  
+- Git 📜  
+- Project-specific tools (e.g., Node.js for Node projects)  
+- `requirements.txt` or `uv` file for dependencies  
+- A dash of coding enthusiasm 😄  
+
+---
+
+## Installation 📦
+
+Choose your flavor: `venv` or `uv`.
+
+### Option 1: Using `venv` 🐍
+
+```bash
+# Clone the repo
+git clone https://github.com/<your-username>/<your-repo>.git
+cd <your-repo>
+
+# Set up and activate a virtual environment
+python3 -m venv venv
 source venv/bin/activate  # Windows: venv\Scripts\activate
 
-
-Install dependencies:pip install -r requirements.txt
-
+# Install dependencies
+pip install -r requirements.txt
+````
 
 Ready to rock! 🎉
 
-Option 2: Using uv ⚡
-If you have uv, sync dependencies:
+### Option 2: Using `uv` ⚡
+
+```bash
+# Sync dependencies
 uv sync
 
-Activate the environment:
+# Activate the environment
 source .venv/bin/activate  # Windows: .venv\Scripts\activate
+```
 
 You’re good to go! 💥
-Usage 🚀
-Create a Python script (e.g., run_agent.py) to define your project. Here’s a sample for a Node.js task app, but tweak it for any project:
+
+---
+
+## Usage 🚀
+
+Create a Python script (e.g., `run_agent.py`) to define your project. Here’s a sample for a Node.js task app, but customize it for any project:
+
+```python
 from modules.logging.logger import setup_logger
 from modules.graph.developer_agent import DeveloperAgent
 from modules.types.enums import Technologies
@@ -73,30 +94,47 @@ setup_logger(process_id)
 # Initialize agent
 dev_agent = DeveloperAgent(process_id=process_id, requirements=requirements)
 
-# Optional: Visualize workflow
-from IPython.display import Image, display
-display(Image(dev_agent.graph.get_graph().draw_mermaid_png()))
-
 # Run agent
 final_state = dev_agent.run()
+
 from modules.graph.developer_agent import DeveloperState
 final_state = DeveloperState(**final_state)
+```
 
 Run it using either:
+
+```bash
 python run_agent.py
+```
 
-or, if using uv:
+or, if using `uv`:
+
+```bash
 uv run run_agent.py
+```
 
-Your project files will appear in a new directory (e.g., TaskManager). Check logs for details and admire the Mermaid diagram if you included visualization. 🎉
-Troubleshooting 🐞
+Your project files will appear in a new directory (e.g., `TaskManager`). Check logs for details. 🎉
 
-Graph issues? Ensure all nodes in dev_agent.graph are connected. Try draw_method=MermaidDrawMethod.API if visualization fails.
-Dependency woes? Verify requirements.txt or uv sync and Python 3.8+.
-Still stuck? Channel your inner Sherlock 🕵️‍♂️ and check the logs.
+---
 
-Contributing 🤝
-Want to make this agent cooler? Fork, tweak, and send a PR. We love community vibes! 🌈
-License 📜
-MIT License. Use, share, remix—just don’t build a rogue AI without inviting us 😉.
-Happy coding, and may your bugs be few and your coffee strong! ☕
+## Troubleshooting 🐞
+
+* Dependency issues? Verify `requirements.txt`, run `uv sync`, and check your Python version (3.8+).
+* Script not running? Ensure your virtual environment is activated and dependencies are installed.
+* Still stuck? Check logs or channel your inner Sherlock 🕵️‍♂️.
+
+---
+
+## Contributing 🤝
+
+Want to level up this agent? Fork, tweak, and submit a pull request. We love community vibes! 🌈
+
+---
+
+## License 📜
+
+MIT License. Use, share, remix—just don’t build a rogue AI without a shoutout 😉.
+
+---
+
+Happy coding, and may your commits be clean and your coffee strong! ☕
