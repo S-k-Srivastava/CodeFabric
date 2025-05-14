@@ -32,6 +32,7 @@ agent_name = "developer_agent"
 output_folder = "./outputs"
 
 model_name = "gpt-4o"
+# model_name="gpt-4.1-2025-04-14"
 reasoning_model_name = "o4-mini"
 
 class DeveloperState(TypedDict):
@@ -114,7 +115,7 @@ class DeveloperAgent:
         # based on the result_state of that node or step
         # loop_to_node : Node to go back and retry if error
         # next_node : Actual next node if no error
-        def make_retry_condition_path(loop_to_node:str,next_node:str,result_id:str):    
+        def make_retry_condition_path(result_id:str):    
             def should_retry(state:DeveloperState):
                 if not state['result_states'].get(result_id)['success'] and \
                     state['result_states'].get(result_id)['retries'] < self.allowed_retry_count:
@@ -124,9 +125,9 @@ class DeveloperAgent:
                     
                     if state['result_states'].get(result_id)['error'] == None:
                         raise Exception("No Error Details Found!")
-                    return loop_to_node
+                    return "retry"
                 
-                return next_node
+                return "next"
             
             return should_retry
 
@@ -137,22 +138,34 @@ class DeveloperAgent:
 
         ## Retry Conditional Edge Path
         install_packages_path = make_retry_condition_path(
-            loop_to_node=NodeIDs.RECOMMEND_PACKAGES.value,
-            next_node=NodeIDs.CREATE_PROJECT_PLAN.value,
-            result_id = f"{NodeIDs.RECOMMEND_PACKAGES.value}+{NodeIDs.INSTALL_PACKAGES.value}"
+                result_id = f"{NodeIDs.RECOMMEND_PACKAGES.value}+{NodeIDs.INSTALL_PACKAGES.value}"
         )
-        graph_builder.add_conditional_edges(source=NodeIDs.INSTALL_PACKAGES.value,path=install_packages_path)
+        graph_builder.add_conditional_edges(
+            source=NodeIDs.INSTALL_PACKAGES.value,
+            path=install_packages_path,
+            path_map={
+                "retry":NodeIDs.RECOMMEND_PACKAGES.value,
+                "next":NodeIDs.CREATE_PROJECT_PLAN.value
+            }
+        )
         graph_builder.add_edge(NodeIDs.CREATE_PROJECT_PLAN.value,NodeIDs.SORT_TOPOLOGICALLY.value)
         graph_builder.add_edge(NodeIDs.SORT_TOPOLOGICALLY.value,NodeIDs.PICK_A_FILE.value)
 
         # Conditional Edge Path to Generate all files in state['files']
         def generate_file_next_path(state:DeveloperState):
             if state['current_index'] == -1:
-                return NodeIDs.GIT_COMMIT.value
+                return 'all-files-generated'
             else:
-                return NodeIDs.GENERATE_FILE_CODE.value
+                return "move-to-next"
              
-        graph_builder.add_conditional_edges(source=NodeIDs.PICK_A_FILE.value,path=generate_file_next_path)
+        graph_builder.add_conditional_edges(
+            source=NodeIDs.PICK_A_FILE.value,
+            path=generate_file_next_path,
+            path_map={
+                "all-files-generated":NodeIDs.GIT_COMMIT.value,
+                "move-to-next":NodeIDs.GENERATE_FILE_CODE.value
+            }
+        )
         graph_builder.add_edge(NodeIDs.GENERATE_FILE_CODE.value,NodeIDs.PICK_A_FILE.value)
         graph_builder.add_edge(NodeIDs.GIT_COMMIT.value,END)
         
@@ -178,7 +191,7 @@ class DeveloperAgent:
             start_state = None
         
         # Invoke
-        self.graph.invoke(start_state,config=config)
+        return self.graph.invoke(start_state,config=config)
 
     async def arun(self):
         # Graph Config
@@ -195,7 +208,7 @@ class DeveloperAgent:
             start_state = None
         
         # Async Invoke
-        await self.graph.ainvoke(start_state,config=config)
+        return await self.graph.ainvoke(start_state,config=config)
     
     def initialize_project(self,state:DeveloperState) -> DeveloperState:
         # Get Technology

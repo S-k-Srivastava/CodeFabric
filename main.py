@@ -4,24 +4,18 @@ from modules.types.enums import Technologies
 from modules.types.models import Requirements
 
 # Inputs
-process_id = "rag-on-pdfs"
+process_id = "leetcode-agent-any"
 project_description = """
-Build a Python project that performs Retrieval-Augmented Generation (RAG) on PDFs.
+Build a python ai agent that takes the leetcode DSA questions, it understands the problem and identify the common
+patterns. The explain user how to approach and solve the problem in very pattern identification way.
 
-### 🧠 Project Requirements:
-- Read **all PDF documents** from a `data/` folder automatically.
-- Use a **local vector database** like **ChromaDB**
-- Extract text from each PDF and **embed** it using a local embedding model (e.g., `sentence-transformers`).
-- Store vectorized data into the local vector DB. use Hugging face embeddings.
-- Provide a **Streamlit chat interface** that:
-  - Accepts user questions.
-  - Retrieves relevant document chunks from the vector store.
-  - Use open ai for llm
-- use langchain packages for llm
+It then proposes the python solution code for the problem.
 
-Keep all the imports from root.
-Generate a example .env
-Add a app.py to root
+I will give the key in the .env.
+
+Make a user freindly streamlit app for the same with chat support. Save the Each Questions as a row in sqlite3 local database.
+
+Use should be able to converse for each question. can change the leetcode question using + icon. can go back to question list and converse again.
 """
 
 setup_logger(process_id)
@@ -29,7 +23,7 @@ setup_logger(process_id)
 dev_agent = DeveloperAgent(
     process_id=process_id,
     requirements=Requirements(
-        project_name="rag-on-pdfs",
+        project_name="leetcode-agent-any",
         project_description=project_description,
         packages=[],
         technology=Technologies.PYTHON.value,
