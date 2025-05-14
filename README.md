@@ -1,6 +1,6 @@
 # 🚀 CodeFabric : AI Code Generation Framework
 
-Welcome to the LangGraph Developer Agent, your coding sidekick that spins up any project faster than you can say "commit to GitHub!" 🚀 Feed it your project idea, and it’ll generate code like a wizard casting spells 🧙‍♂️. Powered by LangGraph, it’s automation with a sprinkle of magic ✨.
+Welcome to CodeFabric, your coding sidekick that spins up any project faster than you can say "commit to GitHub!" 🚀 Feed it your project idea, and it’ll generate code like a wizard casting spells 🧙‍♂️. Powered by LangGraph, it’s automation with a sprinkle of magic ✨.
 
 This README covers setup and usage to unleash this agent’s power on GitHub. Let’s dive in! 😎
 
