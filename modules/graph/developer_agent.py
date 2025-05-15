@@ -225,7 +225,7 @@ class DeveloperAgent:
         logger.info(f"🛠️  **CommandExecution**: Running Initialization command: {command} 🔧")
         command_result = self.command_runner.run_commands([command])[0]
 
-        logger.info(f"✅ **CommandResult**: Command executed successfully! 🎉")
+        logger.info(f"✅ **CommandResult**: {command_result.output} 🎉")
 
         # If Command Failed then raise Exception
         if not command_result.is_success:
@@ -281,8 +281,11 @@ class DeveloperAgent:
         technology = state['requirements']['technology']
         command = PackageInstallationCommands[technology]
         command = command.format(packages=" ".join(state['requirements']['packages']))
+        
         logger.info(f"🛠️  **CommandExecution**: Running installation command: {command} 🔧")
         command_result = self.command_runner.run_commands([command])[0]
+
+        logger.info(f"✅ **CommandResult**: {command_result.output} 🎉")
 
         # Update Result State
         if command_result.is_success:
