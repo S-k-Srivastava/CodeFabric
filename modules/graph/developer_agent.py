@@ -31,7 +31,7 @@ logger = logging.getLogger(__name__)
 agent_name = "developer_agent"
 output_folder = "./outputs"
 
-model_name = "gpt-4o"
+model_name = "gpt-4.1"
 # model_name="gpt-4.1-2025-04-14"
 reasoning_model_name = "o4-mini"
 
@@ -42,6 +42,10 @@ class DeveloperState(TypedDict):
     files : list[FileInfo]
     result_states : dict[str,ResultState]
     current_index: int
+    reasoning_input_tokens: int
+    reasoning_output_tokens: int
+    normal_input_tokens: int
+    normal_output_tokens: int
 
 class NodeIDs(Enum):
     INITIALIZE_PROJECT = "initialize-project"
@@ -76,6 +80,10 @@ class DeveloperAgent:
             requirements = requirements,
             files = [],
             result_states={},
+            reasoning_input_tokens = 0,
+            reasoning_output_tokens = 0,
+            normal_input_tokens = 0,
+            normal_output_tokens = 0,
             current_index = -1,
             is_initialized=False
         )
@@ -263,8 +271,10 @@ class DeveloperAgent:
             )
 
         # Invokation
+        state['reasoning_input_tokens'] += self.llm.get_num_tokens(str((state['result_states'][result_id]['messages'])))
         _packages = self.reasoning_llm.with_structured_output(PackagesFormatter)\
             .invoke(state['result_states'][result_id]['messages'])
+        state['reasoning_output_tokens'] += self.llm.get_num_tokens(str(_packages.model_dump_json()))
         
         # Update State
         state['result_states'][result_id]['messages'].append(AIMessage(str(_packages.model_dump_json())))
@@ -323,11 +333,14 @@ class DeveloperAgent:
             f"Project Description: {state['requirements']['project_description']}\n"
         )
         state['result_states'][result_id]['messages'].append(HumanMessage(context_provider_prompt))
+        state['reasoning_input_tokens'] += self.llm.get_num_tokens(str((state['result_states'][result_id]['messages'])))
+        # Invokation
         _files = self.reasoning_llm.with_structured_output(FileInfosFormatter)\
             .invoke(state['result_states'][result_id]['messages'])
-        state['result_states'][result_id]['messages'].append(AIMessage(str(_files.model_dump_json())))
-
+        state['reasoning_output_tokens'] += self.llm.get_num_tokens(str(_files.model_dump_json()))
+        
         # Update State
+        state['result_states'][result_id]['messages'].append(AIMessage(str(_files.model_dump_json())))
         state['files'] = _files.to_model
         state['result_states'][result_id]['version'] += 1
 
@@ -421,7 +434,7 @@ class DeveloperAgent:
             state['result_states'][result_id] = result_state
 
         dependencies_files = [file for file in state['files'] if file['path'] in current_file['dependencies']]
-        logger.info(f"📦 **FileGeneration**: {len(current_file['dependencies'])}/{len(dependencies_files)} Found! 🚀")
+        logger.info(f"📦 **FileGeneration**: Out of {len(current_file['dependencies'])} required files, {len(dependencies_files)} Found! 🚀")
         
         dependencies_file_contents = (
             "<dependencies>\n\n\n" +
@@ -454,7 +467,11 @@ class DeveloperAgent:
 
         state['result_states'][result_id]['messages'].append(HumanMessage(context_provider_prompt))
 
+        state['normal_input_tokens'] += self.llm.get_num_tokens(str((state['result_states'][result_id]['messages'])))
+        # Invokation
         ai_message = self.llm.invoke(state['result_states'][result_id]['messages'])
+        
+        state['normal_output_tokens'] += self.llm.get_num_tokens(str(ai_message.content))
 
         # Filter code
         file_content = re.sub(r'```[a-zA-Z0-9_]*', '', ai_message.content)
@@ -505,7 +522,12 @@ class DeveloperAgent:
             f"{'\n'.join([f'File Name: {file["name"]}\nFile Path: {file["path"]}\n' for file in state['files']])}\n"
         )
         state['result_states'][result_id]['messages'].append(HumanMessage(context_provider_prompt))
+        
+        state['normal_input_tokens'] += self.llm.get_num_tokens(str((state['result_states'][result_id]['messages'])))
+        # Invokation
         _gitignore_list = self.llm.with_structured_output(GitIgnoreFormatter).invoke(state['result_states'][result_id]['messages'])
+        
+        state['normal_output_tokens'] += self.llm.get_num_tokens(str(_gitignore_list.model_dump_json()))
         
         # Transform and Write .gitignore
         gitignores = _gitignore_list.to_model
@@ -526,7 +548,13 @@ class DeveloperAgent:
         state['result_states'][result_id]['messages'].append(AIMessage(str(_gitignore_list.model_dump_json())))
 
         logger.info("✅ **GitCommit**: Git commit successfully! 🎉")
-
+        
+        
+        # Log the git commit history
         logger.info(command_results_git_commit[len(command_results_git_commit)-1].output)
 
+        # Log Token Usage
+        logger.info(f"🔢 **TokenUsage**: Normal Input tokens: {state['normal_input_tokens']}, Normal Output tokens: {state['normal_output_tokens']} 🧮")
+        logger.info(f"🔢 **TokenUsage**: Reasoning Input tokens: {state['reasoning_input_tokens']}, Reasoning Output tokens: {state['reasoning_output_tokens']} 🧮")
+        
         return state
