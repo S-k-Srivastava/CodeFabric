@@ -1,7 +1,7 @@
 from typing import Optional, TypedDict
 from langchain_core.messages import BaseMessage
 
-from modules.types.enums import PatchType
+from codefabric.types.enums import PatchType
 
 class Requirements(TypedDict):
     project_name: str

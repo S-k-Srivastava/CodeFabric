@@ -1,148 +1,118 @@
-# 🚀 CodeFabric : AI Code Generation Framework
+# 🚀 CodeFabric: AI Code Generation Package
 
-Welcome to CodeFabric, your coding sidekick that spins up any project faster than you can say "commit to GitHub!" 🚀 Feed it your project idea, and it’ll generate code like a wizard casting spells 🧙‍♂️. Powered by LangGraph, it’s automation with a sprinkle of magic ✨.
+Welcome to CodeFabric, your AI-powered coding assistant that generates projects faster than you can say "pip install"! 🚀 Feed it your project idea, and it’ll craft code like a digital artisan 🧙‍♂️. Powered by LangGraph, it’s automation with a touch of brilliance ✨.
 
-This README covers setup and usage to unleash this agent’s power on GitHub. Let’s dive in! 😎
+This README covers installation and usage to kickstart your projects. Let’s get coding! 😎
 
 ---
 
 ## Features 🌟
 
-- **Project Generator**: Builds any project from your requirements (web apps, CLIs, or your wildest ideas!).
+- **Project Generator**: Creates any project from your requirements (web apps, AI agents, or your wildest ideas!).
 - **Tech Flexibility**: Supports multiple tech stacks via the `Technologies` enum.
-- **Smart Workflow**: LangGraph orchestrates the process like a pro conductor 🎶.
+- **Smart Workflow**: LangGraph orchestrates the process like a master conductor 🎶.
+- **Custom LLM Support**: Use your own LLM with structured output support, or stick with OpenAI.
 - **Logging**: Tracks progress, so you’re never lost in the code jungle 🌴.
 
 ---
 
 ## Prerequisites 🛠️
 
-- Python 3.8+ 🐍  
-- Git 📜  
-- Project-specific tools (e.g., Node.js for Node projects)  
-- `requirements.txt` or `uv` file for dependencies  
-- A dash of coding enthusiasm 😄  
+- Python 3.8+ 🐍
+- `pip` for package installation
+- Project-specific tools (e.g., Node.js for Node projects)
+- A sprinkle of coding enthusiasm 😄
 
 ---
 
 ## Installation 📦
 
-Choose your flavor: `venv` or `uv`.
-
-### Option 1: Using `venv` 🐍
+Install CodeFabric using `pip`:
 
 ```bash
-# Clone the repo
-git clone https://github.com/<your-username>/<your-repo>.git
-cd <your-repo>
-
-# Set up and activate a virtual environment
-python3 -m venv venv
-source venv/bin/activate  # Windows: venv\Scripts\activate
-
-# Install dependencies
-pip install -r requirements.txt
-````
-
-Ready to rock! 🎉
-
-### Option 2: Using `uv` ⚡
-
-```bash
-# Sync dependencies
-uv sync
-
-# Activate the environment
-source .venv/bin/activate  # Windows: .venv\Scripts\activate
+pip install codefabric
 ```
 
-You’re good to go! 💥
+Ready to roll! 🎉
 
 ---
 
 ## Usage 🚀
 
-Create a Python script (e.g., `run_agent.py`) to define your project. Here’s a sample for a Node.js task app, but customize it for any project:
+Create a Python script (e.g., `run_agent.py`) to define your project. Here’s an example for a LeetCode AI agent with a Streamlit app:
 
 ```python
-from modules.logging.logger import setup_logger
-from modules.graph.developer_agent import DeveloperAgent
-from modules.types.enums import Technologies
-from modules.types.models import Requirements
+from codefabric.graph.developer_agent import DeveloperAgent
+from codefabric.types.models import Requirements
+from codefabric.types.enums import Technologies
 
-# Unique process ID
-process_id = "1"
-
-# Project requirements
+process_id = "leetcode-agent"
 project_description = """
-Create a Node.js backend for task management with APIs to:
-1. Create a task
-2. Update a task
-3. Delete a task
-4. Fetch all tasks
+Build a python ai agent that takes the leetcode DSA questions, it understands the problem and identify the common
+patterns. The explain user how to approach and solve the problem in very pattern identification way.
+It then proposes the python solution code for the problem.
+I will give the key in the .env.
+Make a user freindly streamlit app for the same with chat support. Save the Each Questions as a row in sqlite3 local database.
+Use should be able to converse for each question. can change the leetcode question using + icon. can go back to question list and converse again.
 """
-requirements = Requirements(
-    project_name="TaskManager",
-    project_description=project_description,
-    packages=[],
-    technology=Technologies.NodeJS.value,
+
+dev_agent = DeveloperAgent(
+    process_id=process_id,
+    requirements=Requirements(
+        project_name="leetcode-agent",
+        project_description=project_description,
+        packages=[],
+        technology=Technologies.PYTHON.value,
+    ),
+    # llm=CustomLLM(), # Pass Your Custom LLM Here if needed or add OPENAI_API_KEY in .env file
+    # reasoning_llm=CustomReasoningLLM(), # Pass Your Custom Reasoning LLM Here if needed or add OPENAI_API_KEY in .env file
 )
 
-# Set up logging
-setup_logger(process_id)
+# Optional: Pass your own LLM (must support structured output)
+# from your_llm_library import CustomLLM
+# custom_llm = CustomLLM(model="your-model", api_key="your-key")
+# dev_agent = DeveloperAgent(process_id=process_id, requirements=requirements, llm=custom_llm)
 
-# Initialize agent
-dev_agent = DeveloperAgent(process_id=process_id, requirements=requirements)
-
-# Run agent
-final_state = dev_agent.run()
-
-from modules.graph.developer_agent import DeveloperState
-final_state = DeveloperState(**final_state)
+dev_agent.run()
 ```
 
-Add `OPENAI_API_KEY` to the `.env` file in the root directory:
+### Using OpenAI
+Add `OPENAI_API_KEY` to a `.env` file in your project root:
 
-```OPENAI_API_KEY=your_openai_api_key_here
+```env
+OPENAI_API_KEY=your_openai_api_key_here
 ```
 
-Or
+### Using Custom LLM
+If using a custom LLM with structured output support, initialize it in your script (see commented example above) and pass it to `DeveloperAgent`.
 
-Pass your own llm instance that supports structured output.
-
-Run it using either:
+Run the script:
 
 ```bash
 python run_agent.py
 ```
 
-or, if using `uv`:
-
-```bash
-uv run run_agent.py
-```
-
-Your project files will appear in a new directory (e.g., `TaskManager`). Check logs for details. 🎉
+Your project files will appear in a new directory (e.g., `leetcode-agent-any`). Check logs for details. 🎉
 
 ---
 
 ## Troubleshooting 🐞
 
-* Dependency issues? Verify `requirements.txt`, run `uv sync`, and check your Python version (3.8+).
-* Script not running? Ensure your virtual environment is activated and dependencies are installed.
-* Still stuck? Check logs or channel your inner Sherlock 🕵️‍♂️.
+- **Module not found?** Ensure `codefabric` is installed (`pip install codefabric`) and your Python version is 3.8+.
+- **LLM issues?** Verify your API key in `.env` or ensure your custom LLM supports structured output.
+- **Still stuck?** Check logs or channel your inner detective 🕵️‍♂️.
 
 ---
 
 ## Contributing 🤝
 
-Want to level up this agent? Fork, tweak, and submit a pull request. We love community vibes! 🌈
+Want to enhance CodeFabric? Fork the repo, make tweaks, and submit a pull request. We love community vibes! 🌈
 
 ---
 
 ## License 📜
 
-MIT License. Use, share, remix—just don’t build a rogue AI without a shoutout 😉.
+MIT License. Use, share, remix—just don’t build a rogue AI without a nod to us 😉.
 
 ---
 

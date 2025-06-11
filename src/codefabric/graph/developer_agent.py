@@ -1,30 +1,31 @@
 import json
 import logging
 import re
+from codefabric.logging.logger import setup_logger
 from langchain_openai import ChatOpenAI
 from langchain_core.messages import HumanMessage,AIMessage,SystemMessage
-from modules.prompts import decide_packages_prompts as DecidePackagesPrompts
-from modules.prompts import create_project_plan_prompts as CreateProjectPlanPrompts
-from modules.prompts import generate_file_code_prompts as GenerateFileCodePrompts
-from modules.prompts import generate_gitignore_prompts as GenerateGitIgnorePrompts
+from codefabric.prompts import decide_packages_prompts as DecidePackagesPrompts
+from codefabric.prompts import create_project_plan_prompts as CreateProjectPlanPrompts
+from codefabric.prompts import generate_file_code_prompts as GenerateFileCodePrompts
+from codefabric.prompts import generate_gitignore_prompts as GenerateGitIgnorePrompts
 from enum import Enum
 from collections import defaultdict, deque
 from dotenv import load_dotenv
 
-from modules.types.output_formatters import GitIgnoreFormatter, PackagesFormatter,FileInfosFormatter
-from modules.utils.io_helper import IOHelper
+from codefabric.types.output_formatters import GitIgnoreFormatter, PackagesFormatter,FileInfosFormatter
+from codefabric.utils.io_helper import IOHelper
 load_dotenv()
 import os
 
 from langgraph.graph import StateGraph,START,END
 from typing import TypedDict
-from modules.graph.sql_checkpointer import MySQLCheckpointer
+from codefabric.graph.sql_checkpointer import MySQLCheckpointer
 
-from modules.utils.command_runner import CommandRunner
+from codefabric.utils.command_runner import CommandRunner
 
-from modules.types.models import FileInfo, Requirements, ResultState
+from codefabric.types.models import FileInfo, Requirements, ResultState
 
-from modules.data.commands import ProjectInitializationCommands,PackageInstallationCommands
+from codefabric.data.commands import ProjectInitializationCommands,PackageInstallationCommands
 
 logger = logging.getLogger(__name__)
 
@@ -67,6 +68,12 @@ class DeveloperAgent:
         allowed_retry_count=3,
         recursion_limit=150
     ):  
+        if (llm is None or reasoning_llm is None) and os.environ.get('OPENAI_API_KEY') is None:
+            raise Exception("Please set the OPENAI_API_KEY in your environment variables or pass the llm and reasoning_llm parameters.")
+        
+        # Setup Logger
+        setup_logger(process_id)
+        
         # Initialize max allowed retries for any node
         self.allowed_retry_count = allowed_retry_count
         self.recursion_limit = recursion_limit

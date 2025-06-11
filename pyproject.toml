@@ -1,16 +1,16 @@
 [tool.setuptools]
-package-dir = { "" = "modules" }
+package-dir = { "" = "src" }
 
 [tool.setuptools.packages.find]
-where = ["modules"]
+where = ["src"]
 
 [build-system]
 requires = ["setuptools>=61.0", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "codefabric-v2"
-version = "0.1.0"
+name = "codefabric"
+version = "0.1.1"
 description = "CodeFabric is an AI-powered code generation framework that spins up full projects from natural language requirements using LangGraph workflows."
 authors = [
     { name = "Saurav Kumar Srivastava", email = "sksrivastava.me@gmail.com" },

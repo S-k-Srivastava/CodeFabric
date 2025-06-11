@@ -1,7 +1,7 @@
 from pydantic import BaseModel, Field
 from typing import Optional
-from modules.types.enums import PatchType
-from modules.types.models import FileInfo, Patch, PatchDetails, Patches
+from codefabric.types.enums import PatchType
+from codefabric.types.models import FileInfo, Patch, PatchDetails, Patches
 
 class PackagesFormatter(BaseModel):
     packages: list[str] = Field(...,description="List of exact packages names to install.")
