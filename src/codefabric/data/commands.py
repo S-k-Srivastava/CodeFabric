@@ -1,4 +1,4 @@
-from modules.types.enums import Technologies
+from codefabric.types.enums import Technologies
 
 ProjectInitializationCommands: dict[str, str] = {
     Technologies.NodeJS.value: "npm init -y",

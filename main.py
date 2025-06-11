@@ -1,7 +1,6 @@
-from modules.logging.logger import setup_logger
-from modules.graph.developer_agent import DeveloperAgent
-from modules.types.enums import Technologies
-from modules.types.models import Requirements
+from codefabric.graph.developer_agent import DeveloperAgent
+from codefabric.types.enums import Technologies
+from codefabric.types.models import Requirements
 
 # Inputs
 process_id = "leetcode-agent-any"
@@ -17,8 +16,6 @@ Make a user freindly streamlit app for the same with chat support. Save the Each
 
 Use should be able to converse for each question. can change the leetcode question using + icon. can go back to question list and converse again.
 """
-
-setup_logger(process_id)
 
 dev_agent = DeveloperAgent(
     process_id=process_id,

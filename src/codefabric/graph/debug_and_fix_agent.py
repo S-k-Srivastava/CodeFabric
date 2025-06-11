@@ -5,9 +5,9 @@ from typing import TypedDict
 
 from langchain_openai import ChatOpenAI
 
-from modules.graph.sql_checkpointer import MySQLCheckpointer
-from modules.types.models import FileInfoDebugAndFix
-from modules.utils.command_runner import CommandRunner
+from codefabric.graph.sql_checkpointer import MySQLCheckpointer
+from codefabric.types.models import FileInfoDebugAndFix
+from codefabric.utils.command_runner import CommandRunner
 
 logger = logging.getLogger(__name__)
 
