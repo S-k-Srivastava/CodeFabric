@@ -10,7 +10,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "codefabric"
-version = "0.1.1"
+version = "0.1.2"
 description = "CodeFabric is an AI-powered code generation framework that spins up full projects from natural language requirements using LangGraph workflows."
 authors = [
     { name = "Saurav Kumar Srivastava", email = "sksrivastava.me@gmail.com" },

@@ -87,6 +87,7 @@ OPENAI_API_KEY=your_openai_api_key_here
 If using a custom LLM with structured output support, initialize it in your script (see commented example above) and pass it to `DeveloperAgent`.
 
 Run the script:
+---
 
 ```bash
 python run_agent.py
@@ -95,6 +96,9 @@ python run_agent.py
 Your project files will appear in a new directory (e.g., `leetcode-agent-any`). Check logs for details. 🎉
 
 ---
+
+### Flow Chart 🗺️
+![CodeFabric Screenshot](developer_graph.png)
 
 ## Troubleshooting 🐞
 
