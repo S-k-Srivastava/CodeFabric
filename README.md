@@ -101,6 +101,15 @@ from modules.graph.developer_agent import DeveloperState
 final_state = DeveloperState(**final_state)
 ```
 
+Add `OPENAI_API_KEY` to the `.env` file in the root directory:
+
+```OPENAI_API_KEY=your_openai_api_key_here
+```
+
+Or
+
+Pass your own llm instance that supports structured output.
+
 Run it using either:
 
 ```bash

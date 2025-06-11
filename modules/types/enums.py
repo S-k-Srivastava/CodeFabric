@@ -5,6 +5,7 @@ class Technologies(Enum):
     PYTHON_UV = "python-uv"
     NodeJS = "nodejs"
     NEXTJS_TAILWIND_TYPESCRIPT = "nextjs-tailwind-typescript"
+    FLUTTER = "flutter"
     other = "other"
 
 class PatchType(Enum):
