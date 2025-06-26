@@ -231,8 +231,8 @@ wheels = [
 ]
 
 [[package]]
-name = "codefabric-v2"
-version = "0.1.0"
+name = "codefabric"
+version = "0.1.2"
 source = { editable = "." }
 dependencies = [
     { name = "build" },
