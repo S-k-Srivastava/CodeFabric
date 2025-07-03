@@ -119,8 +119,8 @@ export OPENAI_API_KEY=your_openai_api_key_here
 Here’s how CodeFabric works internally:
 
 1. Parses your idea into structured requirements
-2. Constructs LangGraph agent flow
-3. Generates folder structure, code files, and dependencies
+2. Generates folder structure, code files, and dependencies
+3. Generate each planned file with accuracy and correct context from already generated files and description
 4. Final project is ready-to-run 🚀
 
 ![CodeFabric Flow](developer_graph.png)
