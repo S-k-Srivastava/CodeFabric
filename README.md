@@ -1,45 +1,73 @@
 # 🚀 CodeFabric: AI Code Generation Package
 
-Welcome to CodeFabric, your AI-powered coding assistant that generates projects faster than you can say "pip install"! 🚀 Feed it your project idea, and it’ll craft code like a digital artisan 🧙‍♂️. Powered by LangGraph, it’s automation with a touch of brilliance ✨.
+Welcome to **CodeFabric**, your AI-powered coding assistant that generates full projects from plain English! Feed it your idea, and it crafts clean code like a digital artisan 🧙‍♂️—powered by LangGraph for agentic reasoning and execution.
 
-This README covers installation and usage to kickstart your projects. Let’s get coding! 😎
+> ⚠️ **Before You Start:**
+> If you are using CLI version, you **must set your OpenAI API key** in your environment variables or `.env` file as:
+> `OPENAI_API_KEY=your_openai_api_key_here`
 
 ---
 
 ## Features 🌟
 
-- **Project Generator**: Creates any project from your requirements (web apps, AI agents, or your wildest ideas!).
-- **Tech Flexibility**: Supports multiple tech stacks via the `Technologies` enum.
-- **Smart Workflow**: LangGraph orchestrates the process like a master conductor 🎶.
-- **Custom LLM Support**: Use your own LLM with structured output support, or stick with OpenAI.
-- **Logging**: Tracks progress, so you’re never lost in the code jungle 🌴.
+* 🧑‍💻 **Interactive CLI** with beautiful UI (Rich-based) to generate projects quickly
+* 🔁 **Programmatic API** for power users and automation
+* 🧠 **LLM-driven reasoning**, powered by LangGraph
+* ⚙️ **Supports multiple technologies** via the `Technologies` enum
+* 🧩 **Pluggable LLM** support (use OpenAI or your custom one)
+* 📦 **Auto setup** with logging and task breakdowns
 
 ---
 
 ## Prerequisites 🛠️
 
-- Python 3.8+ 🐍
-- `pip` for package installation
-- Project-specific tools (e.g., Node.js for Node projects)
-- A sprinkle of coding enthusiasm 😄
+* Python 3.8+
+* `pip` installed
+* Project-specific tools (Node.js for JS projects, etc.)
+* Set `OPENAI_API_KEY` in your environment or `.env` file
 
 ---
 
-## Installation 📦
-
-Install CodeFabric using `pip`:
+## 📦 Installation
 
 ```bash
 pip install codefabric
 ```
 
-Ready to roll! 🎉
+---
+
+## 🖥️ Option 1: CLI (Recommended)
+
+Launch the interactive CLI to generate a full-stack project with guided input:
+
+```bash
+codefabric
+```
+
+You'll be prompted to:
+
+* 📝 Enter project name
+* 💡 Describe what the project does
+* 💻 Choose a technology stack (e.g., Python, Node.js, etc.)
+* ✅ Confirm creation
+
+Once confirmed, CodeFabric will automatically generate your full project folder based on your inputs using LangGraph-powered AI agents.
+
+> Example CLI Output:
+
+```
+📝 Project Name: portfolio-app
+💡 Description: A personal portfolio site with blog and contact form
+💻 Technology: Next.js
+```
+
+Your project will be generated and saved into `portfolio-app-any/`. Logs are printed during generation.
 
 ---
 
-## Usage 🚀
+## 🧠 Option 2: Programmatic API Usage
 
-Create a Python script (e.g., `run_agent.py`) to define your project. Here’s an example for a LeetCode AI agent with a Streamlit app:
+You can use CodeFabric inside your own Python script for advanced or automated workflows:
 
 ```python
 from codefabric.graph.developer_agent import DeveloperAgent
@@ -47,14 +75,7 @@ from codefabric.types.models import Requirements
 from codefabric.types.enums import Technologies
 
 process_id = "leetcode-agent"
-project_description = """
-Build a python ai agent that takes the leetcode DSA questions, it understands the problem and identify the common
-patterns. The explain user how to approach and solve the problem in very pattern identification way.
-It then proposes the python solution code for the problem.
-I will give the key in the .env.
-Make a user freindly streamlit app for the same with chat support. Save the Each Questions as a row in sqlite3 local database.
-Use should be able to converse for each question. can change the leetcode question using + icon. can go back to question list and converse again.
-"""
+project_description = """Build a python AI agent that takes LeetCode DSA questions, identifies patterns, explains how to solve, and builds a Streamlit app."""
 
 dev_agent = DeveloperAgent(
     process_id=process_id,
@@ -64,60 +85,68 @@ dev_agent = DeveloperAgent(
         packages=[],
         technology=Technologies.PYTHON.value,
     ),
-    # llm=CustomLLM(), # Pass Your Custom LLM Here if needed or add OPENAI_API_KEY in .env file
-    # reasoning_llm=CustomReasoningLLM(), # Pass Your Custom Reasoning LLM Here if needed or add OPENAI_API_KEY in .env file
 )
-
-# Optional: Pass your own LLM (must support structured output)
-# from your_llm_library import CustomLLM
-# custom_llm = CustomLLM(model="your-model", api_key="your-key")
-# dev_agent = DeveloperAgent(process_id=process_id, requirements=requirements, llm=custom_llm)
 
 dev_agent.run()
 ```
 
-### Using OpenAI
-Add `OPENAI_API_KEY` to a `.env` file in your project root:
-
-```env
-OPENAI_API_KEY=your_openai_api_key_here
-```
-
-### Using Custom LLM
-If using a custom LLM with structured output support, initialize it in your script (see commented example above) and pass it to `DeveloperAgent`.
-
-Run the script:
----
+Run it:
 
 ```bash
 python run_agent.py
 ```
 
-Your project files will appear in a new directory (e.g., `leetcode-agent-any`). Check logs for details. 🎉
+---
+
+## 🔑 Setting Up API Key
+
+To use OpenAI models, add your key to a `.env` file:
+
+```
+OPENAI_API_KEY=your_openai_api_key_here
+```
+
+Or set it in your shell:
+
+```bash
+export OPENAI_API_KEY=your_openai_api_key_here
+```
 
 ---
 
-### Flow Chart 🗺️
-![CodeFabric Screenshot](developer_graph.png)
+## 🗺️ Project Flow
 
-## Troubleshooting 🐞
+Here’s how CodeFabric works internally:
 
-- **Module not found?** Ensure `codefabric` is installed (`pip install codefabric`) and your Python version is 3.8+.
-- **LLM issues?** Verify your API key in `.env` or ensure your custom LLM supports structured output.
-- **Still stuck?** Check logs or channel your inner detective 🕵️‍♂️.
+1. Parses your idea into structured requirements
+2. Constructs LangGraph agent flow
+3. Generates folder structure, code files, and dependencies
+4. Final project is ready-to-run 🚀
 
----
-
-## Contributing 🤝
-
-Want to enhance CodeFabric? Fork the repo, make tweaks, and submit a pull request. We love community vibes! 🌈
+![CodeFabric Flow](developer_graph.png)
 
 ---
 
-## License 📜
+## 🐞 Troubleshooting
 
-MIT License. Use, share, remix—just don’t build a rogue AI without a nod to us 😉.
+* `ModuleNotFoundError`? → Run `pip install codefabric`
+* `OPENAI_API_KEY` error? → Set it in your environment or `.env`
+* Still stuck? → Check terminal logs
 
 ---
 
-Happy coding, and may your commits be clean and your coffee strong! ☕
+## 🤝 Contributing
+
+Pull requests welcome! Fork the repo, make your changes, and help improve CodeFabric.
+
+---
+
+## 📜 License
+
+MIT License.
+Use freely, build responsibly. Don’t unleash rogue AI without giving us a high-five. 🤖✋
+
+---
+
+Happy coding!
+✨ May your agents be smart, and your bugs be few.
